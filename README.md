@@ -28,6 +28,8 @@ same name, and the library source is the same.
 
 [FILES.md](FILES.md) lists every file with its size, its checksum and the
 file of Neuronte 0.1.1 that did the same job.
+[BENCHMARKS.md](BENCHMARKS.md) compares a desktop drawn with this set, with
+the faces of Neuronte 0.1.1, and with an ordinary FreeType font.
 
 ## Build it and check it
 
