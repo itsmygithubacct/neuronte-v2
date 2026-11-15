@@ -1,5 +1,5 @@
 #!/bin/bash
-# usage: bench.sh K95_DIR KILIX_DIR TREES_DIR OUT REPS ; trees: old new none. Each rep: one cold process (empty home), then one warm.
+# usage: [MODES="old new new21 none"] bench.sh K95_DIR KILIX_DIR TREES_DIR OUT REPS ; TREES_DIR holds one Neuronte tree per mode (none is an empty directory). Each rep: one cold process (empty home), then one warm.
 set -u; K=$1; KX=$2; TR=$3; OUT=$4; REPS=${5:-5}; HERE=$(dirname "$(readlink -f "$0")")
 : > "$OUT"
 # The state library is not timed. Outside a git checkout (a copied tree) build it with make and pass its path.
@@ -8,7 +8,7 @@ if [ -z "$LIB" ]; then
   NS=$(mktemp -d)
   LIB=$(KILIX_STORAGE_HOME=$NS/storage KILIX_BUILD_DIRECTORY=$NS/storage/build "$KX/scripts/build-state-library.sh" --print-path) || { echo "state library build failed" >&2; exit 1; }
 fi
-for rep in $(seq 1 $REPS); do for mode in old new none; do
+for rep in $(seq 1 $REPS); do for mode in ${MODES:-old new none}; do
   home=$(mktemp -d)
   for temp in cold warm; do
     s=$(date +%s.%N)
