@@ -29,8 +29,14 @@ same name. The library is the source of 0.1.2 with one file added in 2.1.0,
 
 [FILES.md](FILES.md) lists every file with its size, its checksum and the
 file of Neuronte 0.1.1 that did the same job.
-[BENCHMARKS.md](BENCHMARKS.md) compares a desktop drawn with this set, with
-the faces of Neuronte 0.1.1, and with an ordinary FreeType font.
+[BENCHMARKS.md](BENCHMARKS.md) times a desktop drawn with this set, with
+the faces of Neuronte 0.1.1, and with DejaVu Sans through FreeType. Once a
+size's letters are kept, a string at 11 px takes 62 to 75 µs with Neuronte
+2.1 against 193 to 261 µs with DejaVu, and Neuronte is ahead at every size
+measured, up to 48 px.
+[Neuronte 2 and DejaVu Sans](docs/neuronte-and-dejavu.md) explains how the
+two differ: what each is, what reaches the screen, speed, size, coverage
+and what each cannot do.
 
 ## Build it and check it
 
