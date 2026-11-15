@@ -58,6 +58,15 @@ file was read to make the drawings.
 
 ## What reaches the screen
 
+![Ten lines of text from 8 to 48 px, drawn by Neuronte 2.1 on the left and by DejaVu Sans on the right](neuronte-2.1-and-dejavu.png)
+
+The same ten lines drawn by each, enlarged two times so that single pixels
+show. Both are drawn as Kilix 95 draws them: black and white up to 32 px,
+antialiased at 48 px. From 8 to 12 px the two are close in size and
+weight. From 14 px up Neuronte keeps a thin stroke and open spacing, while
+DejaVu's stroke thickens with the size. `bench/render_dejavu_demo.py`
+drew each half.
+
 The same word at 11 px, black and white, as Kilix 95 draws it. Neuronte
 2.1 first, then DejaVu Sans:
 
