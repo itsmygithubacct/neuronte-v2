@@ -4,7 +4,7 @@ CFLAGS ?= -O3
 NRT_CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -fPIC -Iinclude $(CPPFLAGS) $(CFLAGS)
 LDLIBS = -lm
 PYTHON ?= python3
-OBJS = build/neuronte.o build/utf8.o build/video.o
+OBJS = build/neuronte.o build/utf8.o build/video.o build/bits.o
 
 all: build/libneuronte.a build/libneuronte.so
 

@@ -10,7 +10,8 @@ packed net for each job, and nothing else. It is 47 MB. The full project,
 with the training code, every generation of every net and the measurements
 behind them, is [Neuronte 0.1.x](https://github.com/itsmygithubacct/neuronte).
 Every net here is a file of Neuronte 0.1.2, copied byte for byte under the
-same name, and the library source is the same.
+same name. The library is the source of 0.1.2 with one file added in 2.1.0,
+`src/bits.c`, which lays kept letters into a line of text.
 
 ## What it draws
 
@@ -40,7 +41,8 @@ make          # build/libneuronte.so and build/libneuronte.a
 make test     # checks every shipped file
 ```
 
-`make test` does three things. It verifies every checksum. It draws every
+`make test` does four things. It verifies every checksum. It checks the
+packed text mask calls against a pixel loop. It draws every
 desktop face at its size, regular and bold, and compares each letter with
 the face's drawing in `font/`: a face may have at most 2 wrong pixels, none
 on a digit, and every advance must be exact. Today every face has 0. And it
@@ -78,6 +80,12 @@ neuronte_draw_text(face, pixels, stride, width, height,
                    x, y, 14, 0 /* bold */, "Hello", 5, 0xFFFFFFFF);
 neuronte_close(face);
 ```
+
+A program that draws the same small text over and over, as a desktop does,
+can keep each letter's pixels after the net has drawn it once and lay lines
+out of the kept letters with `neuronte_bits_pack()` and
+`neuronte_bits_compose()`; no net runs then. [BENCHMARKS.md](BENCHMARKS.md)
+has the effect.
 
 A handle keeps the cells it has drawn, so drawing the same character again
 is a copy. Do not share one handle between threads without a lock. The
