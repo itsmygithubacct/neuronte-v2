@@ -476,7 +476,6 @@ def main():
     p.add_argument('--no-status', action='store_true', help='no row of text under the picture')
     p.add_argument('--characters', choices=['portable', 'full'], default='portable',
                    help='cells mode: the 328 block characters, or every character of the bundle (slower)')
-    p.add_argument('--helper', action='store_true', help='cells mode with --characters full: use the learned speed helper')
     p.add_argument('--lavfi', action='store_true', help='the video argument is an ffmpeg lavfi source, such as testsrc2; no sound')
     p.add_argument('--input-fd', type=int, help='read keys from this descriptor instead of the terminal')
     p.add_argument('--log', help='write one JSON line of timings per source frame')
@@ -490,7 +489,6 @@ def main():
     if a.decoder_threads < 0: p.error('--decoder-threads must be nonnegative')
     for tool in ['ffmpeg', 'ffprobe']:
         if not shutil.which(tool): p.error(f'{tool} is required and was not found')
-    if a.helper and (a.mode != 'cells' or a.characters != 'full'): p.error('--helper requires --mode cells --characters full')
     if a.decoder == 'libav' and (a.lavfi or not os.path.isfile(a.video)): p.error('--decoder libav requires a local file')
     library = a.library or ROOT / 'build/libneuronte.so'
     if not os.path.exists(library): p.error(f'{library} is missing; run make first, or pass --library')
@@ -510,7 +508,6 @@ def main():
             if a.decoder == 'libav': p.error(f'the in-process decoder is not available: {exc}')
             notes.append('decoder: ffmpeg command (build/libneuronte-media.so is not built)')
 
-    helper = None
     if a.mode == 'pixels':
         # Each block receives one decoded sample. Explicit pixel sizing uses
         # the same 2 x 4 neural masks for drawing, with no block enlargement.
@@ -518,16 +515,8 @@ def main():
         renderer = fitter if a.pixel_size else MultiInk(a.weights, library, *CELL)
     else:
         fitter = None
-        # The speed helper is bound to the bundle it was trained on (split-v5);
-        # without --weights, cells use that bundle when the helper is on.
-        bundle = cell_bundle(a.weights, a.helper)
+        bundle = cell_bundle(a.weights)
         renderer = TwoInk(a.characters, *CELL, bundle, library)
-        if a.helper:
-            import hashlib
-            from neuronte_video_helpers import Helper, features
-            helper = Helper(ROOT / 'weights/neuronte-video-speed-v1.json', 'speed', runtime=True)
-            if helper.doc.get('scalar_bundle_sha256') != hashlib.sha256(open(bundle, 'rb').read()).hexdigest():
-                p.error('the speed helper was trained against a different bundle')
 
     # Both layouts carry the same RGB samples; planes skip ffmpeg's slower
     # packed conversion and are packed by the compositor instead.
@@ -706,12 +695,7 @@ def main():
                     t3 = time.perf_counter()
                     payload = present_pixels(picture)
                 else:
-                    if helper is not None:
-                        k = helper.doc['inference']['candidates']
-                        scores = helper(features(frame))
-                        cells = renderer.fit(frame, np.argpartition(scores, -k, axis=1)[:, -k:].reshape(geometry['r'], geometry['c'], k))
-                    else:
-                        cells = renderer.fit(frame)
+                    cells = renderer.fit(frame)
                     t2 = t3 = time.perf_counter()
                     payload = text(renderer, cells, previous, geometry['left'], geometry['top']); previous = cells
                 t4 = time.perf_counter()

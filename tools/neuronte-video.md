@@ -9,11 +9,8 @@ size exactly. No implicit resizing or cropping is performed.
 terminal cells. `--output rgb` writes reconstructed RGB24 frames. Full mode
 uses the loaded bundle’s explicit scalar ranges and its actual C coverage masks;
 portable mode uses the 328 ideal geometric masks. Full mode must be displayed
-with that same Neuronte bundle to reproduce the fitted image. Full mode requires a monochrome bundle with explicit scalar ranges. split-v6 is the
-default: split-v5 with its Braille expert replaced by the tiled
-`neuronte-braille-v1`, every other expert, the gate and the ranges byte-identical.
-The learned helpers are bound to split-v5, so with `--helper` and no `--weights`
-both tools use split-v5. A standalone net without a manifest is rejected. Fixed-colour members are
+with that same Neuronte bundle to reproduce the fitted image. Full mode requires a monochrome bundle with explicit scalar ranges. split-v8,
+the one terminal bundle of this set, is the default. A standalone net without a manifest is rejected. Fixed-colour members are
 also rejected, including single-layer colour nets: their palette cannot be
 reproduced by an arbitrary foreground/background fit.
 
@@ -224,9 +221,8 @@ gaps longer than one and a half frame periods in 20 s, and 17 dropped frames.
 truecolour text, which any truecolour terminal shows in its own font; in a
 Neuronte terminal the nets draw it. It is the exhaustive two-ink fit and
 is far from real time: an 80 × 24 grid showed 2 frames a second with
-the 328 block characters. `--characters full` searches the whole bundle and
-`--helper` adds the speed helper; both are slower still than the picture
-needs.
+the 328 block characters. `--characters full` searches the whole bundle and is slower still than the
+picture needs.
 
 `--log FILE` writes one JSON line per source frame (the monotonic time, its
 time in the file, the clock, how late it was shown, when it was written, and the milliseconds spent reading, fitting, drawing,
@@ -245,36 +241,12 @@ scaling filter or neural reconstruction. Shared-memory shutdown waits up to
 Known source chroma locations are passed explicitly to ffmpeg's scale filter,
 so subsampled color samples retain the alignment declared by the source.
 
-## Optional learned helpers
+## Learned helpers
 
-`--level two --mode full --cell 8x16 --helper speed` proposes a compact
-candidate shortlist, then performs the same exact bounded RGB fit on it.
-`--helper quality` uses a learned temporal switch, then checks the proposed
-retained cells against the source image: local SSIM loss at most0.0001,
-whole-frame SSIM loss at most0.001. This is a hybrid model plus quality veto,
-not a model-only fidelity guarantee. Its goal is fewer character changes;
-it still performs exhaustive search. The two helpers are alternatives, not a
-combined mode that has never been measured.
-
-Both require the precise bundle they were trained against, zero `--margin`,
-and 8×16 cells. A mismatched bundle is rejected. The default helpers,
-`neuronte-video-speed-v1` and `neuronte-video-quality-v1`, were retrained
-against split-v5, whose 1,176 scalars include the Greek and Russian letters.
-The v0 helpers were trained against split-v4's 1,061 and are kept: select them
-with `--weights weights/neuronte-split-v4.nrt --helper-model
-weights/neuronte-video-speed-v0.json` (or `-quality-v0`). The optional
-`--helper-model` explicitly selects another compatible, versioned model.
-The helper JSON records the bundle SHA256, model seed, training-frame digest,
-training source hash, inference policy and acceptance evidence. Playback uses
-NumPy/SciPy, not torch. Training and reproducible gates are in `train/video.py`
-and `train/evaluate_video_helpers.py`; `train/adopt_video_helpers.py` writes the
-shipped files and refuses unless both seeds pass.
-
-The initial helpers failed on held-out data and were not adopted. The revised
-inference policy was chosen on validation clips and checked on fresh held-out
-clips, with both seeds retained in research. All footage is original synthetic
-material. Passing these clips does not establish general-purpose performance
-on natural footage; the exhaustive and multi-ink modes remain available.
+The learned speed and quality helpers of Neuronte 0.1.x are not in this
+set, and the player here has no `--helper` option. They were trained
+against an earlier terminal bundle and are in
+[Neuronte 0.1.x](https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/tools/neuronte-video.md).
 
 For exactly binary neural masks, decoding uses cached ink indices derived from
 those masks. This avoids multiplying every pixel by eight one-hot weights.
@@ -282,7 +254,3 @@ It is enabled only after exact binary equality is established; fractional
 masks use the continuous product blend. No mask is rounded. The reproducible
 benchmark reports full-HD encode/decode throughput and a plain-copy reference;
 the Python record-layout work still costs more than a single memory copy.
-
-Runtime helper models must include a valid inference policy; missing or malformed
-policies are rejected before the first frame is read. Policy-less training
-parents remain usable by the research evaluator, which supplies its own policy.

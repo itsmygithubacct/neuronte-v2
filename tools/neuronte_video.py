@@ -18,19 +18,14 @@ sys.path.insert(0, str(ROOT / 'train'))
 import glyphs
 
 
-# Full mode draws every scalar of this bundle. split-v6 is split-v5 with its
-# Braille expert replaced by the tiled neuronte-braille-v1; its other five
-# experts, gate and ranges are byte-identical.
+# Full mode draws every scalar of this bundle, the one terminal bundle of
+# this set.
 DEFAULT_BUNDLE = ROOT / 'weights/neuronte-split-v8.nrt'
-# The v1 speed and quality helpers were trained on split-v5's masks and are
-# bound to its SHA256. With a helper and no --weights, the players use it.
-HELPER_BUNDLE = ROOT / 'weights/neuronte-split-v5.nrt'
 
 
-def cell_bundle(weights=None, helper=False):
-    """The bundle two-ink cells are fitted with: --weights when given, else
-    split-v5 when a helper is on (the helper is bound to it), else the default."""
-    return Path(weights) if weights else HELPER_BUNDLE if helper else DEFAULT_BUNDLE
+def cell_bundle(weights=None):
+    """The bundle two-ink cells are fitted with: --weights when given, else the default."""
+    return Path(weights) if weights else DEFAULT_BUNDLE
 
 
 class NeuralMasks:

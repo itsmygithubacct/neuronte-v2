@@ -156,7 +156,7 @@ each letter is. `font/ui-tops.json` gives the first, and each
   rest. A program that used them names the files above instead.
 - Native faces from 33 to 43 px. `neuronte-ui-large-v0` covers those sizes.
 - The learned video helpers. They are tied to `neuronte-split-v5`, so the
-  player's `--helper` option is not available, and its cells mode draws with
+  player here has no `--helper` option, and its cells mode draws with
   `neuronte-split-v8`.
 - Training code, weights as JSON, second seeds, scores and research
   records. They are in [Neuronte 0.1.x][repo], where every net can be
