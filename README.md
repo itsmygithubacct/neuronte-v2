@@ -1,60 +1,185 @@
 # Neuronte
 
-A neural net that is its own font. A character goes in, as ASCII or as
-UTF-8. The net writes that character's pixels into a buffer the caller
-owns. No font file, glyph table or bitmap atlas is consulted. The weights
-are the font.
+Neuronte is a font made of small neural nets. You give it a character and
+it writes that character's pixels into a buffer you own. There is no font
+file, no glyph table and no bitmap atlas behind it. The weights are the
+font.
 
-This is Neuronte 2: the same library and nets as Neuronte 0.1.2, cut down to
-one file per job. Nothing here was retrained or repacked. Every weight file
-is byte for byte a file of 0.1.2 under the same name, and the library source
-is 0.1.2's. The training code, the weights as JSON, second seeds, scores,
-older generations of each net and the research records stay in the 0.1.x
-repository, which is where each net's card, recipe and measurements are.
+This repository is **Neuronte 2**, the slim set: the C library and one
+packed net for each job, and nothing else. It is 47 MB. The full project,
+with the training code, every generation of every net and the measurements
+behind them, is [Neuronte 0.1.x](https://github.com/itsmygithubacct/neuronte).
+Every net here is a file of Neuronte 0.1.2, copied byte for byte under the
+same name, and the library source is the same.
 
-## What is here
+## What it draws
 
-| | |
+| Job | File | In depth |
+|---|---|---|
+| Terminal text: ASCII, accented Latin, Greek, Russian, symbols, box and block characters, Braille | `neuronte-split-v8.nrt` | [split-v8][split-v8] |
+| Desktop text, 1 to 32 px, upright | `neuronte-ui1-v1.nrt` to `neuronte-ui32-v1.nrt` | [faces](#desktop-faces) |
+| Desktop text, 3 to 32 px, italic | `neuronte-ui3-italic-v1.nrt` to `neuronte-ui32-italic-v1.nrt` | [faces](#desktop-faces) |
+| Desktop text above 32 px | `neuronte-ui-large-v0.nrt` | [README, 0.1.x][readme] |
+| 300 colour emoji | `neuronte-emoji-v1.nrt` | [emoji-v1][emoji] |
+| 167 colour icons | `neuronte-icon-v2.nrt` | [icon-v2][icon] |
+| The Kilix flame | `neuronte-flame-v1.nrt` | [flame-v1][flame] |
+| A mouse pointer | `neuronte-pointer-v1.nrt` | [pointer-v1][pointer] |
+| Video in a terminal | `neuronte-video-masks-v0.nrt` | [the video player](tools/neuronte-video.md) |
+
+[FILES.md](FILES.md) lists every file with its size, its checksum and the
+file of Neuronte 0.1.1 that did the same job.
+
+## Build it and check it
+
+It needs a C compiler and `make`. The check also needs Python 3 with NumPy.
+
+```sh
+make          # build/libneuronte.so and build/libneuronte.a
+make test     # checks every shipped file
+```
+
+`make test` does three things. It verifies every checksum. It draws every
+desktop face at its size, regular and bold, and compares each letter with
+the face's drawing in `font/`: a face may have at most 2 wrong pixels, none
+on a digit, and every advance must be exact. Today every face has 0. And it
+compares every net's pixels, over a fixed list of characters, with the
+values recorded in `tests/golden.json` when this set was cut.
+
+## Use it
+
+The whole interface is [`include/neuronte.h`](include/neuronte.h), and every
+file opens with the same call.
+
+Terminal text is drawn a cell at a time:
+
+```c
+#include "neuronte.h"
+
+neuronte *font;
+if (neuronte_open_file("weights/neuronte-split-v8.nrt", &font) != NEURONTE_OK)
+    return 1;
+/* pixels: row-major 0xAARRGGBB, stride in pixels. A 16 x 32 cell at x, y. */
+neuronte_draw_utf8(font, pixels, stride, width, height,
+                   x, y, 16, 32, "Hello", 5, 0xFFFFFFFF);
+neuronte_close(font);
+```
+
+Desktop text is drawn a line at a time, with each letter's own width. Open
+the face for the size you want and draw at that size:
+
+```c
+neuronte *face;
+neuronte_open_file("weights/neuronte-ui14-v1.nrt", &face);
+neuronte_set_binary(face, 1);            /* crisp pixels, as the face was drawn */
+int w = neuronte_text_width(face, "Hello", 5, 0 /* bold */, 14);
+neuronte_draw_text(face, pixels, stride, width, height,
+                   x, y, 14, 0 /* bold */, "Hello", 5, 0xFFFFFFFF);
+neuronte_close(face);
+```
+
+A handle keeps the cells it has drawn, so drawing the same character again
+is a copy. Do not share one handle between threads without a lock. The
+[Use section of the 0.1.x README][use] covers colour files, palettes and
+themes, coverage without drawing, and loading weights from memory.
+
+## How it works, briefly
+
+Each net is a small multilayer perceptron. It is asked about one point in
+a character's cell at a time and answers how far that point is from the
+ink. The library asks it about every pixel and turns the answers into
+coverage. Because the net answers for a point and not a pixel, the same
+weights draw a cell of any size.
+
+One large net for everything is slow, so the files here are **bundles** of
+many small nets. A table sends each character to the one small net that was
+trained on it, and only that net runs. That is why this set is several
+times faster than Neuronte 0.1.1 at the same pixels. More:
+
+- [The net][net]: its inputs, layers and output.
+- [Split nets and the router][router]: how a bundle picks a net.
+- [Character groups and tiles][decomposition]: how a job is cut into small nets.
+- [Speed][speed] and [quality][quality]: how each is measured.
+- [Changes in 0.1.2][changes]: what got faster, and by how much.
+
+## Desktop faces
+
+Each size from 1 to 32 px has its own net, because each size is its own
+hand-placed pixel design and not one shape scaled. A net reproduces its
+size exactly; no net draws another size's design. Above 32 px one net,
+`neuronte-ui-large-v0`, draws any size with smooth edges.
+
+The faces were made in four groups, each with a card that gives the recipe,
+the acceptance rule and the measured speed of every face in it:
+
+| Faces | Card |
 |---|---|
-| `src/`, `include/` | The library, C11, no dependencies beyond libm. `make` builds `build/libneuronte.so` and `.a`. `make media` builds the optional FFmpeg decoder library. |
-| `weights/` | The packed nets, one per job, and `SHA256SUMS`. [FILES.md](FILES.md) lists each with its size, checksum and the 0.1.1 file it takes over from. |
-| `font/` | The desktop faces' drawings (advances and pixels) and `ui-tops.json`, which a desktop needs to place them. |
-| `tools/` | The terminal video player and its modules. `train/glyphs.py` and `train/strokes.py` are here only because the player imports them. |
-| `tests/` | `make test` checks the whole shipped set. |
+| 1 to 15 and 19 to 21 px; italics 3 to 12, 14 and 15 px | [small faces][faces-small] |
+| 16 to 18, 22, 23, 25 and 26 px; italics 13, 16 to 23, 25 and 26 px | [narrower single nets][faces-192-256] |
+| 24 and 27 to 30 px; italics 24, 28, 29 and 30 px | [faces cut into groups][faces-v1] |
+| 31 and 32 px; italics 27, 31 and 32 px | [wide faces][faces-wide] |
 
-## The set
+A desktop also needs to know where a face sits in its cell and how wide
+each letter is. `font/ui-tops.json` gives the first, and each
+`font/ui-EM.txt` holds that size's advances and pixels.
 
-- **Terminal font:** `neuronte-split-v8.nrt`, one bundle for every character.
-  No other terminal bundle is shipped.
-- **Desktop faces:** one net per size, 1 to 32 px upright and 3 to 32 px
-  italic, each the fastest net that draws its size, and
-  `neuronte-ui-large-v0.nrt` above 32 px. Each size has its own net because
-  the sizes are separately drawn pixel designs; no net draws another size's
-  design.
-- **Colour:** `neuronte-emoji-v1.nrt`, `neuronte-icon-v2.nrt`,
-  `neuronte-flame-v1.nrt`, `neuronte-pointer-v1.nrt`.
-- **Video:** `neuronte-video-masks-v0.nrt`, the file the default pixels mode
-  draws with.
+## The nets, one by one
 
-## What differs from 0.1.2 in use
+- **Terminal bundle.** [split-v8][split-v8] is built from parts, each with
+  its own card: [ASCII in four groups][ascii], [Braille as tiles][braille],
+  [symbols][symbol], [block, sextant and octant characters][pixel], and
+  [accented Latin, Greek and Russian][accent]. Two of those parts, the pixel
+  and accent groups, missed the strict limits set before they were trained
+  and were chosen after a side-by-side review; the split-v8 card lists what
+  differs.
+- **Emoji.** [emoji-v1][emoji]: twelve nets over a partition balanced by
+  difficulty, about five times as fast as the one it replaces.
+- **Icons.** [icon-v2][icon]: four nets of three layers. It is about four
+  times as fast as icon-v1 and a little less exact at 12 px.
+- **Flame and pointer.** [flame-v1][flame] and [pointer-v1][pointer] are
+  narrower nets of the same drawings.
+- **Video.** [The player](tools/neuronte-video.md) plays a video in a
+  terminal. Its default mode needs only `neuronte-video-masks-v0.nrt`.
 
-- A consumer names these files; the `-v0` desktop faces, `neuronte-split-v5`
-  and the other older files are not here.
-- The video player's cells mode draws with `neuronte-split-v8`. The learned
-  video helpers are bound to `neuronte-split-v5` and are not shipped, so
-  `--helper` is not available.
-- `neuronte-icon-v2` is less exact than `neuronte-icon-v1` at 12 px and equal
-  at 16 px.
+## What is not here
 
-## The check
+- The older files: `neuronte-split-v5`, the `-v0` desktop faces and the
+  rest. A program that used them names the files above instead.
+- Native faces from 33 to 43 px. `neuronte-ui-large-v0` covers those sizes.
+- The learned video helpers. They are tied to `neuronte-split-v5`, so the
+  player's `--helper` option is not available, and its cells mode draws with
+  `neuronte-split-v8`.
+- Training code, weights as JSON, second seeds, scores and research
+  records. They are in [Neuronte 0.1.x][repo], where every net can be
+  retrained and rechecked. `train/glyphs.py` and `train/strokes.py` are here
+  only because the video player and the check import them.
 
-`make test` verifies every checksum, draws every native desktop face at its
-size, regular and bold, and compares it with its drawing (at most 2 wrong
-pixels a face, none on a digit, every advance exact), and compares every
-packed file's pixels over a fixed character list with `tests/golden.json`,
-which was recorded when the set was cut.
+## Where things came from
 
-## Licence
-
-MIT; see [LICENSE](LICENSE). The optional media library links FFmpeg; see
+[PROVENANCE.md](PROVENANCE.md) says how the drawings and nets were made.
+The licence is MIT; see [LICENSE](LICENSE). The optional media library,
+built with `make media`, links FFmpeg; see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+[repo]: https://github.com/itsmygithubacct/neuronte
+[readme]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/README.md
+[use]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/README.md#use
+[net]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/README.md#the-net
+[router]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/README.md#split-nets-and-the-router
+[speed]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/README.md#speed
+[quality]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/README.md#quality
+[changes]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/CHANGES.md
+[decomposition]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/train/DECOMPOSITION.md
+[split-v8]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-split-v8.md
+[ascii]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ascii-next.md
+[braille]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-braille-v1.md
+[symbol]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-symbol-v1.md
+[pixel]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-pixel-groups-v1.md
+[accent]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-accent-groups-v1.md
+[emoji]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-emoji-v1.md
+[icon]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-icon-v2.md
+[flame]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-flame-v1.md
+[pointer]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-pointer-v1.md
+[faces-small]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-v1-small.md
+[faces-192-256]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-v1-192-256.md
+[faces-v1]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-v1.md
+[faces-wide]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-wide-v1.md
