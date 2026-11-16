@@ -199,7 +199,7 @@ draws the whole string with DejaVu, so the two are never mixed on one
 line. Text in another script, accented names and most symbols are
 therefore still DejaVu on a Neuronte desktop.
 
-The terminal bundle, `neuronte-split-v8.nrt`, is a different kind of
+The terminal bundle, `neuronte-split-v9.nrt`, is a different kind of
 face: one design drawn into a cell of any size, covering ASCII, accented
 Latin, Greek, Russian, symbols, box and block characters and Braille. It
 is what a terminal uses, and it is not compared here.

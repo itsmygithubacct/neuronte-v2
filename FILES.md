@@ -1,10 +1,10 @@
 # The shipped files
 
-40 files, 32,030,799 bytes. Every file but three is a file of Neuronte 0.1.2, commit `91b6a6ba10a1fe4e69b1f7e35029b688a51fa062`, copied byte for byte. The three marked 2.1.1 are from commit `8c43ef9c96f06ea0fd79fc2616b767c89e62ddfe` of the full project (branch `work/neuronte-scalable-faces`); between them they do the work of 33 files of 0.1.2. The last column is the file of 0.1.1 that did the same job.
+40 files, 32,832,199 bytes. Every file is a file of [Neuronte 0.1.4](https://github.com/itsmygithubacct/neuronte/tree/v0.1.4), copied byte for byte under the same name. All but four were already in Neuronte 0.1.2; the three marked 2.1.1 do the work of 33 files of 0.1.2, and the terminal bundle marked 2.2.0 takes the place of `neuronte-split-v8.nrt`. The last column is the file of 0.1.1 that did the same job.
 
 | Job | File | Bytes | SHA-256 | In 0.1.1 |
 |---|---|---:|---|---|
-| Terminal font, every character | `neuronte-split-v8.nrt` | 2,805,688 | `445b53caa40c6cd02a1b324458bf5ae549b1ab304043ac0eeb3d4871e6461168` | `neuronte-split-v5.nrt` |
+| Terminal font, every character (2.2.0) | `neuronte-split-v9.nrt` | 3,607,088 | `0a92f223d47f1680929b2c5d7512d1a1728d4871e6653b33cbaad060e6bb90c0` | `neuronte-split-v5.nrt` |
 | Emoji | `neuronte-emoji-v1.nrt` | 4,785,292 | `7aaccccf37175e3b5b973bb89b4731011308e6d1e6a8e8f12a1e5e6e5bc7973d` | `neuronte-emoji-v0.nrt` |
 | Icons | `neuronte-icon-v2.nrt` | 496,184 | `0e85a2a45eaa99f555ca48e801a8a7c1094c9d2b791fec75594079c21f008f51` | `neuronte-icon-v1.nrt` |
 | Kilix flame | `neuronte-flame-v1.nrt` | 57,372 | `eca551241b2f46934412c348a6e96bee13dafac214439a9c6d5c7bf0d11713bf` | `neuronte-flame-v0.nrt` |

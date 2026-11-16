@@ -20,7 +20,7 @@ import glyphs
 
 # Full mode draws every scalar of this bundle, the one terminal bundle of
 # this set.
-DEFAULT_BUNDLE = ROOT / 'weights/neuronte-split-v8.nrt'
+DEFAULT_BUNDLE = ROOT / 'weights/neuronte-split-v9.nrt'
 
 
 def cell_bundle(weights=None):

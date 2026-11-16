@@ -40,7 +40,7 @@ build/libneuronte-media.so: src/media.c include/neuronte_media.h | build
 # packed file's pixels against tests/golden.json.
 test: all build/test_utf8 build/test_api
 	./build/test_utf8
-	./build/test_api weights/neuronte-split-v8.nrt --full --accent --pixel
+	./build/test_api weights/neuronte-split-v9.nrt --full --accent --pixel
 	OPENBLAS_NUM_THREADS=1 $(PYTHON) tests/check_set.py build/libneuronte.so
 
 # A line of text in the terminal, drawn by the desktop faces.

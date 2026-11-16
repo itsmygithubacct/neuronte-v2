@@ -12,7 +12,10 @@ usage: python3 tests/check_set.py build/libneuronte.so [--write-golden]
    wrong pixels in all, and none on a digit.
 3. The packed text mask calls (src/bits.c) give what a pixel loop gives, and
    refuse a buffer or line that is too small.
-4. Every packed file's coverage over a fixed list of characters and cells, and
+4. neuronte_untrained() tells the characters the terminal bundle was trained
+   on from the rest, and neuronte_set_untrained() marks the rest only when
+   asked.
+5. Every packed file's coverage over a fixed list of characters and cells, and
    its advances where it has a table, hash to the values in tests/golden.json.
    For the two faces that draw many sizes, lines of text and sheared letters
    drawn at several sizes are part of the hash.
@@ -38,6 +41,9 @@ SCALARS = (list(range(0x20, 0x7F)) + [0xA0, 0xC9, 0xE9, 0xF1, 0x100, 0x152, 0x17
            + list(range(0x2500, 0x2580, 5)) + list(range(0x2580, 0x25A0))
            + list(range(0x2800, 0x2900)) + list(range(0x1FB00, 0x1FB3C, 3))
            + list(range(0x1CD00, 0x1CDE6, 9)) + [0x2026, 0x20AC, 0x2190, 0x2713, 0xFFFD]
+           # characters split-v9 added: marks, signs, Greek with tonos, more Cyrillic
+           + [0xB1, 0xB2, 0xBC, 0xA3, 0x2717, 0x2194, 0x21D2, 0x2264, 0x2260, 0x221E, 0x2208, 0x25CB,
+              0x2605, 0x2122, 0x2074, 0x2082, 0x3AC, 0x390, 0x38F, 0x456, 0x457, 0x491, 0x45F, 0x40A]
            + [0x1F600, 0x1F44D, 0x2764, 0x1F680, 0x100000, 0x100001, 0x100010, 0x10FFFD, 0x110000])
 CELLS = [(8, 16), (16, 32), (11, 23)]
 TEXT = b"The quick brown fox jumps over the lazy dog. 0123456789 !?#@&*()[]{}<>"
@@ -236,6 +242,48 @@ def text_masks(lib):
     return bad
 
 
+def untrained(lib):
+    """The calls that say a bundle was not trained on a character, and mark it."""
+    bad = 0
+    lib.neuronte_untrained.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    lib.neuronte_set_untrained.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    lib.neuronte_coverage.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int, ctypes.c_int,
+                                      ctypes.c_int, ctypes.POINTER(ctypes.c_float)]
+    h = open_file(lib, os.path.join(ROOT, "weights", "neuronte-split-v9.nrt"))
+
+    def cover(scalar):
+        out = (ctypes.c_float * (16 * 32))()
+        if lib.neuronte_coverage(h, scalar, 16, 32, 0, out) != 0:
+            return None
+        return np.array(out)
+
+    known = (0x41, 0xE9, 0x3B1, 0x416, 0x2502, 0x2847, 0x2713, 0x2264, 0x3AC, 0x457)
+    unknown = (0x4E2D, 0x5D0, 0x1F600, 0x3042)
+    bad += sum(lib.neuronte_untrained(h, s) != 0 for s in known)
+    bad += sum(lib.neuronte_untrained(h, s) != 1 for s in unknown)
+    plain = {s: cover(s) for s in known + unknown}
+    bad += lib.neuronte_set_untrained(h, 1) != 0
+    for s in known:
+        bad += not np.array_equal(cover(s), plain[s])
+    for s in unknown:
+        mark = cover(s)
+        # A hollow rectangle: only 0 and 1, some of each, the same for every character.
+        bad += mark is None or set(np.unique(mark)) != {0.0, 1.0}
+        bad += np.array_equal(mark, plain[s]) or not np.array_equal(mark, cover(unknown[0]))
+    bad += lib.neuronte_set_untrained(h, 0) != 0
+    bad += sum(not np.array_equal(cover(s), plain[s]) for s in unknown)
+    bad += lib.neuronte_set_untrained(h, 2) == 0
+    lib.neuronte_close(h)
+    # A desktop face is a bundle too: its letters are trained, nothing else is.
+    h = open_file(lib, os.path.join(ROOT, "weights", "neuronte-ui11-v1.nrt"))
+    bad += lib.neuronte_untrained(h, 0x41) != 0
+    bad += lib.neuronte_untrained(h, 0x4E2D) != 1
+    lib.neuronte_close(h)
+    print(f"check_set: untrained characters, {len(known)} trained and {len(unknown)} not, "
+          f"marked only when asked, {bad} wrong")
+    return bad
+
+
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
@@ -252,6 +300,7 @@ def main():
         off += wrong
     print(f"check_set: {len(faces)} faces, {letters} binary letters at their em, {off} wrong pixels in all")
     failed += text_masks(lib)
+    failed += untrained(lib)
     got = {n: pixels(lib, n) for n in names}
     if write:
         with open(GOLDEN, "w") as fh:

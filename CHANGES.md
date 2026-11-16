@@ -1,5 +1,22 @@
 # Changes
 
+## 2.2.0
+
+- **165 more terminal characters.** `neuronte-split-v9` takes the place of
+  `neuronte-split-v8`: check and cross marks, arrows, bullets and shapes,
+  `± ≤ ≥ ≠`, currency, superscripts and fractions, math operators, Greek
+  with tonos and the Cyrillic letters beyond Russian. Every character
+  split-v8 drew is drawn the same. A program that opened
+  `neuronte-split-v8.nrt` opens `neuronte-split-v9.nrt` instead. All
+  fourteen new nets missed the limits set for them before training and
+  ship by the owner's choice; the card says where.
+- **Untrained characters can be told apart.** `neuronte_untrained()` says
+  whether a bundle was trained on a character, and
+  `neuronte_set_untrained()` draws a mark in place of one it was not. Off
+  unless asked for.
+- The library is now the source of Neuronte 0.1.4, and every weight file
+  is a file of 0.1.4.
+
 ## 2.1.1
 
 - **One scalable face for 17 to 32 px**, `neuronte-ui-scaled-latin1-v0`, in place

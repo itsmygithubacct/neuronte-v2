@@ -6,13 +6,12 @@ file, no glyph table and no bitmap atlas behind it. The weights are the
 font.
 
 This repository is **Neuronte 2**, the slim set: the C library and one
-packed net for each job, and nothing else. It is 33 MB. The full project,
+packed net for each job, and nothing else. It is 34 MB. The full project,
 with the training code, every generation of every net and the measurements
 behind them, is [Neuronte 0.1.x](https://github.com/itsmygithubacct/neuronte).
-All but three of the nets are files of Neuronte 0.1.2, copied byte for byte
-under the same name; the three scalable desktop faces are new in 2.1.1. The
-library is the source of 0.1.2 with `src/bits.c`, which lays kept letters
-into a line of text, and with whole-pixel stems for scaled letters.
+Every net is a file of [Neuronte 0.1.4](https://github.com/itsmygithubacct/neuronte/tree/v0.1.4),
+copied byte for byte under the same name, and the library is 0.1.4's
+source.
 [CHANGES.md](CHANGES.md) lists what each version added.
 
 ![The same ten lines, 8 to 48 px, drawn by Neuronte 2.1 and by DejaVu Sans](docs/neuronte-2.1-and-dejavu.png)
@@ -48,7 +47,7 @@ hundred lines, and shows the whole of the text interface.
 
 | Job | File | In depth |
 |---|---|---|
-| Terminal text: ASCII, accented Latin, Greek, Russian, symbols, box and block characters, Braille | `neuronte-split-v8.nrt` | [split-v8][split-v8] |
+| Terminal text: ASCII, accented Latin, Greek, Cyrillic, symbols, arrows, math signs, box and block characters, Braille | `neuronte-split-v9.nrt` | [split-v9](docs/neuronte-split-v9.md) |
 | Desktop text, 1 to 16 px, upright | `neuronte-ui1-v1.nrt` to `neuronte-ui16-v1.nrt` | [faces](#desktop-faces) |
 | Desktop text, 3 to 16 px, italic | `neuronte-ui3-italic-v1.nrt` to `neuronte-ui16-italic-v1.nrt` | [faces](#desktop-faces) |
 | Desktop text, 17 to 32 px, upright and italic | `neuronte-ui-scaled-latin1-v0.nrt`, with `neuronte-ui-scaled-latin1-italic-advances-v0.nrt` | [scaled face](docs/neuronte-ui-scaled-v0.md) |
@@ -100,7 +99,7 @@ Terminal text is drawn a cell at a time:
 #include "neuronte.h"
 
 neuronte *font;
-if (neuronte_open_file("weights/neuronte-split-v8.nrt", &font) != NEURONTE_OK)
+if (neuronte_open_file("weights/neuronte-split-v9.nrt", &font) != NEURONTE_OK)
     return 1;
 /* pixels: row-major 0xAARRGGBB, stride in pixels. A 16 x 32 cell at x, y. */
 neuronte_draw_utf8(font, pixels, stride, width, height,
@@ -199,7 +198,18 @@ each letter is. `font/ui-tops.json` gives the first, and each
 
 ## The nets, one by one
 
-- **Terminal bundle.** [split-v8][split-v8] is built from parts, each with
+- **Terminal bundle.** `neuronte-split-v9` is [split-v8][split-v8] with 165
+  more characters on fourteen small nets: check and cross marks, arrows,
+  bullets and shapes, `± ≤ ≥ ≠`, currency, superscripts and fractions, math
+  operators, Greek with tonos and the Cyrillic letters beyond Russian.
+  Every character split-v8 drew, it draws the same. All fourteen new nets
+  missed the limits set for them before they were trained and ship by the
+  owner's choice after a side-by-side review;
+  [the card](docs/neuronte-split-v9.md) says where each missed. A character
+  the bundle was not trained on is still drawn, by a net that never saw
+  it, as some other shape: `neuronte_untrained()` tells a program which
+  characters those are, and `neuronte_set_untrained()` draws a plain mark
+  in their place. split-v8 is built from parts, each with
   its own card: [ASCII in four groups][ascii], [Braille as tiles][braille],
   [symbols][symbol], [block, sextant and octant characters][pixel], and
   [accented Latin, Greek and Russian][accent]. Two of those parts, the pixel
@@ -224,7 +234,7 @@ each letter is. `font/ui-tops.json` gives the first, and each
   Neuronte 0.1.x and in Neuronte 2.1.0.
 - The learned video helpers. They are tied to `neuronte-split-v5`, so the
   player here has no `--helper` option, and its cells mode draws with
-  `neuronte-split-v8`.
+  `neuronte-split-v9`.
 - Training code, weights as JSON, second seeds, scores and research
   records. They are in [Neuronte 0.1.x][repo], where every net can be
   retrained and rechecked. `train/glyphs.py` and `train/strokes.py` are here
@@ -246,7 +256,7 @@ built with `make media`, links FFmpeg; see
 [quality]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/README.md#quality
 [changes]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/CHANGES.md
 [decomposition]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/train/DECOMPOSITION.md
-[split-v8]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-split-v8.md
+[split-v8]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.4/weights/neuronte-split-v8.md
 [ascii]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ascii-next.md
 [braille]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-braille-v1.md
 [symbol]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-symbol-v1.md
