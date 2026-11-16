@@ -13,6 +13,35 @@ Every net here is a file of Neuronte 0.1.2, copied byte for byte under the
 same name. The library is the source of 0.1.2 with one file added in 2.1.0,
 `src/bits.c`, which lays kept letters into a line of text.
 
+![The same ten lines, 8 to 48 px, drawn by Neuronte 2.1 and by DejaVu Sans](docs/neuronte-2.1-and-dejavu.png)
+
+Neuronte 2.1 on the left, DejaVu Sans through FreeType on the right,
+enlarged two times. [Neuronte 2 and DejaVu Sans](docs/neuronte-and-dejavu.md)
+explains the differences.
+
+## Try it
+
+It needs a C compiler and `make`, nothing else.
+
+```sh
+git clone https://github.com/itsmygithubacct/neuronte-v2
+cd neuronte-v2
+make demo
+```
+
+`make demo` builds the library and draws four lines in your terminal with
+the desktop faces. Then draw your own:
+
+```sh
+./build/neuronte-say -s 14 "Hello from a neural net"
+./build/neuronte-say -s 24 -b "Bold"          # -i for italic, 3 to 32 px
+./build/neuronte-say -s 64 -o big.pgm "Big"   # also writes an image
+```
+
+Sizes from 1 to 32 use that size's own net; larger sizes use the scalable
+one. The source is [`demo/neuronte-say.c`](demo/neuronte-say.c), about a
+hundred lines, and shows the whole of the text interface.
+
 ## What it draws
 
 | Job | File | In depth |
@@ -44,6 +73,7 @@ It needs a C compiler and `make`. The check also needs Python 3 with NumPy.
 
 ```sh
 make          # build/libneuronte.so and build/libneuronte.a
+make demo     # draws four lines of text in the terminal
 make test     # checks every shipped file
 ```
 

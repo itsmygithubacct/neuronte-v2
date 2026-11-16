@@ -43,7 +43,19 @@ test: all build/test_utf8 build/test_api
 	./build/test_api weights/neuronte-split-v8.nrt --full --accent --pixel
 	OPENBLAS_NUM_THREADS=1 $(PYTHON) tests/check_set.py build/libneuronte.so
 
+# A line of text in the terminal, drawn by the desktop faces.
+build/neuronte-say: demo/neuronte-say.c build/libneuronte.a
+	$(CC) $(NRT_CFLAGS) -o $@ $< build/libneuronte.a $(LDLIBS)
+
+demo: build/neuronte-say
+	./build/neuronte-say -s 11 "The quick brown fox jumps over the lazy dog. 0123456789"
+	./build/neuronte-say -s 11 -b "Bold is the same letter struck twice."
+	./build/neuronte-say -s 16 -i "Italic, sheared on its own grid."
+	./build/neuronte-say -s 24 "Neural nets as a font"
+
 clean:
 	rm -rf build
+
+.PHONY: all media test demo clean
 
 .PHONY: all media test clean
