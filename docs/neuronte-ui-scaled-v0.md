@@ -3,8 +3,9 @@
 > This card is copied from the full project, where the face was made:
 > [Neuronte, commit 8c43ef9](https://github.com/itsmygithubacct/neuronte/tree/8c43ef9c96f06ea0fd79fc2616b767c89e62ddfe).
 > The source drawings, trainer and tests it names are in that tree, not in
-> this slim set. It also describes Latin-1 variants of the face, which this
-> set does not ship.
+> this slim set. The file this set ships is the Latin-1 variant the card
+> describes (`-latin1` in its name): the same ASCII letters, byte for byte,
+> with the accented letters added.
 
 One drawing file that draws the desktop face at every em from 17 to 32 pixels, in place of one
 pixel face per em, upright and (by the library's draw-time italic) italic. It is the ui-large

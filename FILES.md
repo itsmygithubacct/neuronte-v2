@@ -1,6 +1,6 @@
 # The shipped files
 
-40 files, 30,555,703 bytes. Every file but three is a file of Neuronte 0.1.2, commit `91b6a6ba10a1fe4e69b1f7e35029b688a51fa062`, copied byte for byte. The three marked 2.1.1 are from commit `8c43ef9c96f06ea0fd79fc2616b767c89e62ddfe` of the full project (branch `work/neuronte-scalable-faces`); between them they do the work of 33 files of 0.1.2. The last column is the file of 0.1.1 that did the same job.
+40 files, 32,030,799 bytes. Every file but three is a file of Neuronte 0.1.2, commit `91b6a6ba10a1fe4e69b1f7e35029b688a51fa062`, copied byte for byte. The three marked 2.1.1 are from commit `8c43ef9c96f06ea0fd79fc2616b767c89e62ddfe` of the full project (branch `work/neuronte-scalable-faces`); between them they do the work of 33 files of 0.1.2. The last column is the file of 0.1.1 that did the same job.
 
 | Job | File | Bytes | SHA-256 | In 0.1.1 |
 |---|---|---:|---|---|
@@ -11,9 +11,9 @@
 | Pointer | `neuronte-pointer-v1.nrt` | 41,984 | `39a03fa8cc31ff9c0de0d0f9b8a02d8565a0c6f89ce499324418788c99116856` | `neuronte-pointer-v0.nrt` |
 | Pointer manifest | `neuronte-pointer-v1.manifest.json` | 979 | `247341a3f7a89213b9cc26033e4ed392776393ca273f472ed713f8d867e92b35` | `neuronte-pointer-v0.manifest.json` |
 | Video masks | `neuronte-video-masks-v0.nrt` | 358,996 | `d81fb4099a2f333e654b2f57a85ff0c13d57ca3dc7d5a4a942bc350650e4707c` | same file |
-| Desktop face above 32 px (2.1.1) | `neuronte-ui-large-v1.nrt` | 1,473,000 | `115d8d5d51cf9e5011d5e4d6b9fe85ae4a070f3cfe910f58c7e90fb1a4589983` | `neuronte-ui-large-v0.nrt` |
-| Desktop face, 17 to 32 px, upright and sheared italic (2.1.1) | `neuronte-ui-scaled-v0.nrt` | 1,774,948 | `e50f68878e00ab3023f8787f61caa82c0323508a4dc01b0dd806e0e4789186eb` | `neuronte-ui17-v0.nrt` to `neuronte-ui32-v0.nrt` and their italics |
-| Italic advances, 17 to 32 px (2.1.1) | `neuronte-ui-scaled-italic-advances-v0.nrt` | 800 | `86f91302d0114b495087d55d295cf6d62dc53e0603e09a42f0ca8648fb17054d` | in each italic file |
+| Desktop face above 32 px (2.1.1) | `neuronte-ui-large-latin1-v1.nrt` | 2,209,684 | `8fec97a302697a703e15b9c59d90a2ce542a9dd98d8e9fe11a533eabe2623747` | `neuronte-ui-large-v0.nrt` |
+| Desktop face, 17 to 32 px, upright and sheared italic (2.1.1) | `neuronte-ui-scaled-latin1-v0.nrt` | 2,512,896 | `13996f26dba65074fffa089b85440738ece4a8ef56ba6ac216c93ada38abbd2b` | `neuronte-ui17-v0.nrt` to `neuronte-ui32-v0.nrt` and their italics |
+| Italic advances, 17 to 32 px (2.1.1) | `neuronte-ui-scaled-latin1-italic-advances-v0.nrt` | 1,264 | `8da323678a6d711ec6b30343798b7959dfcc3b0ba603c771aa63f172dd3ff605` | in each italic file |
 | Desktop face, 1 px | `neuronte-ui1-v1.nrt` | 9,788 | `46117cf3fa86973d2819f90e75d9277625eaf787b5059a021eeba3e94a766a9b` | `neuronte-ui1-v0.nrt` |
 | Desktop face, 2 px | `neuronte-ui2-v1.nrt` | 9,808 | `79ca6e44c50a9d16d7bfeb1803609698be25039bf1556cd3c2f0a8d2726f541b` | `neuronte-ui2-v0.nrt` |
 | Desktop face, 3 px | `neuronte-ui3-v1.nrt` | 288,616 | `c5dde5a7fad867441a170e0f07201294e8aa9c64b52b53459ace58a648d11b38` | `neuronte-ui3-v0.nrt` |

@@ -24,24 +24,24 @@
   "layers": 1,
   "nets": 21
  },
- "neuronte-ui-large-v1.nrt": {
+ "neuronte-ui-large-latin1-v1.nrt": {
   "advance_sha256": "a9a85d2bee116caeb6a874103acecca12ccde4f11253384a69f510d4c329cad5",
-  "coverage_sha256": "829bc859db4882dc79f8344181a27a48ca9b0438f2c000270d1a406c2a1f7671",
+  "coverage_sha256": "c2f041a574c457c926dc1af1b56213cb54b844cbc0e08a47837191e9adbbd1b1",
   "layers": 1,
-  "nets": 4,
+  "nets": 6,
   "text_sha256": "1c6863845c4a7925026ed1c013c45a1858804958e5f848a93cecfc1eccc518bc"
  },
- "neuronte-ui-scaled-italic-advances-v0.nrt": {
+ "neuronte-ui-scaled-latin1-italic-advances-v0.nrt": {
   "advance_sha256": "918fcc2e5577b00b9ec2776a786860416e728bfdedf621fbcc7c268bc316d46f",
   "coverage_sha256": "f065108da2d0df9d15d939d4f863ec7ff68c702e84086d7da831627535686619",
   "layers": 1,
   "nets": 0
  },
- "neuronte-ui-scaled-v0.nrt": {
+ "neuronte-ui-scaled-latin1-v0.nrt": {
   "advance_sha256": "2a1b9a0ff9bb112b33f8f3413d3013d7c4ee21ddae6076cdd5d7406fe3d3980d",
-  "coverage_sha256": "a05a6a7589d733405f36e16c9b7a825cd82d7fb47a1f0ea0ddd2db1302463e96",
+  "coverage_sha256": "9033172f25e17d627dc7d6950581e1a718482d78e430e71e5105fe03115d5d0f",
   "layers": 1,
-  "nets": 16,
+  "nets": 18,
   "text_sha256": "9a8993f9ac248af4f984060ec1333673fe4cec3e4d2c06d675bc4029174723e8"
  },
  "neuronte-ui1-v1.nrt": {

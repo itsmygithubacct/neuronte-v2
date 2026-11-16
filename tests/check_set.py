@@ -138,7 +138,7 @@ def pixels(lib, name):
                 for s in range(0x20, 0x7F):
                     adv.update(f"{lib.neuronte_advance(h, s, bold, em)},".encode())
         entry["advance_sha256"] = adv.hexdigest()
-    scaled = re.match(r"neuronte-ui-(scaled|large)-v\d+\.nrt", name)
+    scaled = re.match(r"neuronte-ui-(scaled|large)(?:-latin1)?-v\d+\.nrt", name)
     if scaled:
         # A face drawn at many sizes: lines of text as a program draws them,
         # black and white to 32 px and blended above, and sheared letters.

@@ -6,7 +6,7 @@ file, no glyph table and no bitmap atlas behind it. The weights are the
 font.
 
 This repository is **Neuronte 2**, the slim set: the C library and one
-packed net for each job, and nothing else. It is 32 MB. The full project,
+packed net for each job, and nothing else. It is 33 MB. The full project,
 with the training code, every generation of every net and the measurements
 behind them, is [Neuronte 0.1.x](https://github.com/itsmygithubacct/neuronte).
 All but three of the nets are files of Neuronte 0.1.2, copied byte for byte
@@ -51,8 +51,8 @@ hundred lines, and shows the whole of the text interface.
 | Terminal text: ASCII, accented Latin, Greek, Russian, symbols, box and block characters, Braille | `neuronte-split-v8.nrt` | [split-v8][split-v8] |
 | Desktop text, 1 to 16 px, upright | `neuronte-ui1-v1.nrt` to `neuronte-ui16-v1.nrt` | [faces](#desktop-faces) |
 | Desktop text, 3 to 16 px, italic | `neuronte-ui3-italic-v1.nrt` to `neuronte-ui16-italic-v1.nrt` | [faces](#desktop-faces) |
-| Desktop text, 17 to 32 px, upright and italic | `neuronte-ui-scaled-v0.nrt`, with `neuronte-ui-scaled-italic-advances-v0.nrt` | [scaled face](docs/neuronte-ui-scaled-v0.md) |
-| Desktop text above 32 px | `neuronte-ui-large-v1.nrt` | [large face](docs/neuronte-ui-large-v1.md) |
+| Desktop text, 17 to 32 px, upright and italic | `neuronte-ui-scaled-latin1-v0.nrt`, with `neuronte-ui-scaled-latin1-italic-advances-v0.nrt` | [scaled face](docs/neuronte-ui-scaled-v0.md) |
+| Desktop text above 32 px | `neuronte-ui-large-latin1-v1.nrt` | [large face](docs/neuronte-ui-large-v1.md) |
 | 300 colour emoji | `neuronte-emoji-v1.nrt` | [emoji-v1][emoji] |
 | 167 colour icons | `neuronte-icon-v2.nrt` | [icon-v2][icon] |
 | The Kilix flame | `neuronte-flame-v1.nrt` | [flame-v1][flame] |
@@ -110,8 +110,8 @@ neuronte_close(font);
 
 Desktop text is drawn a line at a time, with each letter's own width. Open
 the face for the size you want and draw at that size (from 17 px the file
-is `neuronte-ui-scaled-v0.nrt` for every size to 32, and above that
-`neuronte-ui-large-v1.nrt`):
+is `neuronte-ui-scaled-latin1-v0.nrt` for every size to 32, and above that
+`neuronte-ui-large-latin1-v1.nrt`):
 
 ```c
 neuronte *face;
@@ -159,23 +159,27 @@ Each size from 1 to 16 px has its own net, because each small size is its
 own hand-placed pixel design and not one shape scaled. A net reproduces its
 size exactly; no net draws another size's design.
 
-From 17 to 32 px one file, `neuronte-ui-scaled-v0`, draws every size from
+From 17 to 32 px one file, `neuronte-ui-scaled-latin1-v0`, draws every size from
 one design, the strokes the hand faces were first fitted to. The library
 snaps its straight stems to whole pixels, so a stem is exactly 2 px wide
 from 17 to 26 px, and it draws black and white like the small faces. It is
 a different face from the hand-drawn ones it replaced, not a copy: against
 them about a third of the letter widths differ, by at most 2 px, and the
-shapes differ by some tens of pixels a letter. In exchange one 1.8 MB file
-does the work of 32 files of 17.4 MB. Italic is the same letters sheared as
+shapes differ by some tens of pixels a letter. In exchange one 2.5 MB file
+does the work of 32 files of 17.4 MB, and it adds the 58 accented letters
+of Latin-1 (U+00C0 to U+00FF: `é`, `ñ`, `ü`, `ß` and the rest), each a
+letter of the face with a mark placed over it. The sizes from 1 to 16 px
+have no accented letters. Italic is the same letters sheared as
 they are drawn (`NEURONTE_STYLE_ITALIC`), stepped by the advances in
-`neuronte-ui-scaled-italic-advances-v0`; `demo/neuronte-say.c` shows how.
+`neuronte-ui-scaled-latin1-italic-advances-v0`; `demo/neuronte-say.c` shows how.
 [Its card](docs/neuronte-ui-scaled-v0.md) has the measurements for every
 size. Scaled below 17 px the design is not good enough to ship, and below
 10 px it is not legible, which is why the small sizes stay hand-drawn.
 
-Above 32 px one file, `neuronte-ui-large-v1`, draws any size with smooth
-edges. It is the face of `neuronte-ui-large-v0` cut into four smaller nets
-and is about 13 times as fast the first time a size is used. It did not
+Above 32 px one file, `neuronte-ui-large-latin1-v1`, draws any size with smooth
+edges. It is the face of `neuronte-ui-large-v0` cut into four smaller nets,
+about 13 times as fast the first time a size is used, with the same
+Latin-1 letters added by two more nets. It did not
 meet the accuracy limit set for it before it was trained (it is behind the
 old net at 32 px, a size it is not used for, and on its worst letter at 48
 and 96 px) and ships by the owner's decision;
@@ -215,8 +219,8 @@ each letter is. `font/ui-tops.json` gives the first, and each
 
 - The older files: `neuronte-split-v5`, the `-v0` desktop faces and the
   rest. A program that used them names the files above instead.
-- The hand-drawn faces from 17 to 43 px. `neuronte-ui-scaled-v0` and
-  `neuronte-ui-large-v1` cover those sizes; the hand-drawn ones are in
+- The hand-drawn faces from 17 to 43 px. `neuronte-ui-scaled-latin1-v0` and
+  `neuronte-ui-large-latin1-v1` cover those sizes; the hand-drawn ones are in
   Neuronte 0.1.x and in Neuronte 2.1.0.
 - The learned video helpers. They are tied to `neuronte-split-v5`, so the
   player here has no `--helper` option, and its cells mode draws with

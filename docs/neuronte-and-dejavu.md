@@ -16,7 +16,8 @@ Neuronte 2.1.1 changed the sizes from 17 px up: one scalable net now draws
 32 px was replaced by a faster one. Everything here about sizes 1 to 16 px
 holds for 2.1.1. The rows for 24, 32 and 48 px, the picture's lower lines
 and the byte counts describe 2.1.0; [CHANGES.md](../CHANGES.md) has the
-new figures (30.6 MB of weights in all).
+new figures (32.0 MB of weights in all), and from 17 px up the faces now
+also draw the accented letters of Latin-1.
 
 ## In one table
 

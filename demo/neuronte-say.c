@@ -69,9 +69,9 @@ int main(int argc, char **argv)
     if (em <= 16)
         snprintf(path, sizeof path, "%s/neuronte-ui%d%s-v1.nrt", dir, em, italic ? "-italic" : "");
     else if (em <= 32)
-        snprintf(path, sizeof path, "%s/neuronte-ui-scaled-v0.nrt", dir);
+        snprintf(path, sizeof path, "%s/neuronte-ui-scaled-latin1-v0.nrt", dir);
     else
-        snprintf(path, sizeof path, "%s/neuronte-ui-large-v1.nrt", dir);
+        snprintf(path, sizeof path, "%s/neuronte-ui-large-latin1-v1.nrt", dir);
     rc = neuronte_open_file(path, &face);
     if (rc != NEURONTE_OK) {
         fprintf(stderr, "%s: cannot open (%d). Run from the top of the tree or pass -d.\n", path, rc);
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
     if (italic && em > 16) {
         /* The scalable net has no italic of its own: its letters are sheared,
          * and stepped by the italic's own table of advances. */
-        snprintf(path, sizeof path, "%s/neuronte-ui-scaled-italic-advances-v0.nrt", dir);
+        snprintf(path, sizeof path, "%s/neuronte-ui-scaled-latin1-italic-advances-v0.nrt", dir);
         rc = neuronte_open_file(path, &slant);
         if (rc != NEURONTE_OK) {
             fprintf(stderr, "%s: cannot open (%d)\n", path, rc);

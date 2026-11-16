@@ -3,8 +3,9 @@
 > This card is copied from the full project, where the face was made:
 > [Neuronte, commit 8c43ef9](https://github.com/itsmygithubacct/neuronte/tree/8c43ef9c96f06ea0fd79fc2616b767c89e62ddfe).
 > The source drawings, trainer and tests it names are in that tree, not in
-> this slim set. It also describes Latin-1 variants of the face, which this
-> set does not ship.
+> this slim set. The file this set ships is the Latin-1 variant the card
+> describes (`-latin1` in its name): the same ASCII letters, byte for byte,
+> with the accented letters added.
 
 The same face as `neuronte-ui-large-v0` (the ui-large strokes, `font/ui-large.txt`, blended), with
 the same advances, drawn by a bundle of four smaller nets instead of one 384 wide. It draws a

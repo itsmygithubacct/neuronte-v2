@@ -2,15 +2,15 @@
 
 ## 2.1.1
 
-- **One scalable face for 17 to 32 px**, `neuronte-ui-scaled-v0`, in place
-  of 32 hand-drawn files: 1.8 MB where they were 17.4 MB. Its stems are
+- **One scalable face for 17 to 32 px**, `neuronte-ui-scaled-latin1-v0`, in place
+  of 32 hand-drawn files: 2.5 MB where they were 17.4 MB. Its stems are
   snapped to whole pixels by the library. Italic is the same letters
-  sheared, with `neuronte-ui-scaled-italic-advances-v0`. It is a different
+  sheared, with `neuronte-ui-scaled-latin1-italic-advances-v0`. It is a different
   face from the ones it replaces: about a third of the letter widths at
   these sizes change, by at most 2 px, so a program that laid text out
   with the old widths should lay it out again. Sizes 1 to 16 px are
   unchanged.
-- **A faster face above 32 px**, `neuronte-ui-large-v1`, in place of
+- **A faster face above 32 px**, `neuronte-ui-large-latin1-v1`, in place of
   `neuronte-ui-large-v0`: about 13 times as fast the first time a size is
   used, with the same advances. It missed the accuracy limit set for it
   and ships by the owner's decision; its card says where.
@@ -18,7 +18,10 @@
   version 7). A file without one draws as before, and every file kept
   from 2.1.0 draws the same pixels. A 2.1.0 library refuses the new
   scaled file rather than draw it wrongly.
-- The set is 40 files and 30.6 MB of weights, from 70 files and 46.0 MB.
+- **Latin-1 letters from 17 px up.** Both new faces draw the 58 accented
+  letters from U+00C0 to U+00FF as well as ASCII. The faces from 1 to
+  16 px still draw ASCII only.
+- The set is 40 files and 32.0 MB of weights, from 70 files and 46.0 MB.
 
 - `make demo` and `demo/neuronte-say.c`: a line of text drawn by the
   desktop faces and shown in the terminal, with nothing to install. `-o`
