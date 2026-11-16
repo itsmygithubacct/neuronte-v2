@@ -16,6 +16,10 @@
   unless asked for.
 - The library is now the source of Neuronte 0.1.4, and every weight file
   is a file of 0.1.4.
+- Documents, after the release: [BENCHMARKS.md](BENCHMARKS.md) gains a
+  three-way timing of terminal cells (Neuronte 2.2.0, Neuronte 0.1.4,
+  DejaVu) with the character counts, and says which desktop rows describe
+  2.1.0.
 
 ## 2.1.1
 

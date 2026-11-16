@@ -201,8 +201,10 @@ therefore still DejaVu on a Neuronte desktop.
 
 The terminal bundle, `neuronte-split-v9.nrt`, is a different kind of
 face: one design drawn into a cell of any size, covering ASCII, accented
-Latin, Greek, Russian, symbols, box and block characters and Braille. It
-is what a terminal uses, and it is not compared here.
+Latin, Greek, Cyrillic, symbols, arrows, math signs, box and block
+characters and Braille: 1,341 characters. It is what a terminal uses.
+[BENCHMARKS.md](../BENCHMARKS.md#terminal-cells-three-ways) times it
+against DejaVu Sans Mono and counts the characters each has.
 
 DejaVu Sans maps 5,918 code points: Latin with its extensions, Greek,
 Cyrillic, Armenian, Hebrew, Arabic, mathematical operators, arrows and

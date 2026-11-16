@@ -1,5 +1,11 @@
 # Benchmarks
 
+The desktop measurements below were made with Neuronte 2.0 and 2.1.0. Since
+2.1.1 the sizes from 17 px up are drawn by two scalable faces and not by a
+file for each size, so the rows for 20 px and larger describe 2.1.0. The
+sizes up to 16 px use the same files as then. [Terminal cells, three
+ways](#terminal-cells-three-ways) at the end was measured with 2.2.0.
+
 Measured on 2026-11-15. Four ways of drawing the text of one desktop are
 compared:
 
@@ -143,3 +149,48 @@ Drawing 200 strings (4,329 characters) at each size, regular weight. "First use"
 | 48 px (scalable) | 3318 ms | 2846 ms | 5449 µs | 354 µs | 416 µs | 1.2× |
 
 Measuring a string's width at 11 px: Neuronte 4.3 µs, DejaVu 16.7 µs.
+
+## Terminal cells, three ways
+
+Measured on 2026-11-16 with Neuronte 2.2.0 (`neuronte-split-v9.nrt`),
+Neuronte 0.1.4 with its default terminal bundle (`neuronte-split-v5.nrt`),
+and DejaVu Sans Mono 2.37 through FreeType, with DejaVu Sans for the
+characters Mono lacks. Each drew one terminal cell for each of the 873
+characters all three have. The machines were idle and ran one at a time;
+the figures are medians of 9 repeats and include the Python call into each
+library.
+
+- **first**: a character's cell the first time it is asked for.
+- **again**: the same cell asked for again. Neuronte copies it from the
+  handle's cache when it is still there; the cache is small, and with 873
+  different characters some are drawn again. FreeType draws every time.
+
+| Cell | Drawn with | Core i7-6820HQ first | again | Core i7-10700F first | again |
+|---|---|---:|---:|---:|---:|
+| 8x16 | Neuronte 2.2.0 | 421 µs | 68 µs | 322 µs | 51 µs |
+| | Neuronte 0.1.4 | 744 µs | 122 µs | 585 µs | 95 µs |
+| | DejaVu | 73 µs | 73 µs | 59 µs | 59 µs |
+| 12x24 | Neuronte 2.2.0 | 992 µs | 152 µs | 753 µs | 116 µs |
+| | Neuronte 0.1.4 | 1,676 µs | 266 µs | 1,295 µs | 203 µs |
+| | DejaVu | 75 µs | 74 µs | 60 µs | 60 µs |
+| 16x32 | Neuronte 2.2.0 | 1,825 µs | 278 µs | 1,298 µs | 199 µs |
+| | Neuronte 0.1.4 | 3,002 µs | 461 µs | 2,326 µs | 366 µs |
+| | DejaVu | 76 µs | 75 µs | 61 µs | 61 µs |
+
+Neuronte 2.2.0 draws a cell for the first time about 1.7 times as fast as
+Neuronte 0.1.4's default bundle. FreeType is 5 to 24 times as fast as
+Neuronte 2.2.0 on a first draw, and its time barely changes with the cell
+size while a net's grows with the pixels. A terminal that keeps each cell
+after its first draw composes an 80 x 24 screen from kept cells in the same
+time whichever drew them (4 to 6 ms at 8x16 in this test's Python).
+
+Characters: the Neuronte 2.2.0 bundle was trained on 1,341, Neuronte
+0.1.4's default bundle on 1,176, and the two DejaVu files map 6,065. All
+three have 875. DejaVu has 5,026 that Neuronte 2.2.0 does not, and
+Neuronte 2.2.0 has 302 that DejaVu does not: sextants, octants and other
+legacy computing blocks.
+
+The test that made these numbers, with three terminal panes that draw the
+same typed text side by side, is in
+kilix-bench, under
+[`sidebyside/`](https://github.com/itsmygithubacct/kilix-bench/tree/work/neuronte-sidebyside/sidebyside).
