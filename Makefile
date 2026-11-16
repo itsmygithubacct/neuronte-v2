@@ -51,6 +51,7 @@ demo: build/neuronte-say
 	./build/neuronte-say -s 11 "The quick brown fox jumps over the lazy dog. 0123456789"
 	./build/neuronte-say -s 11 -b "Bold is the same letter struck twice."
 	./build/neuronte-say -s 16 -i "Italic, sheared on its own grid."
+	./build/neuronte-say -s 20 -i "One net draws 17 to 32 px."
 	./build/neuronte-say -s 24 "Neural nets as a font"
 
 clean:

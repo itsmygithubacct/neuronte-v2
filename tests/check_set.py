@@ -14,6 +14,8 @@ usage: python3 tests/check_set.py build/libneuronte.so [--write-golden]
    refuse a buffer or line that is too small.
 4. Every packed file's coverage over a fixed list of characters and cells, and
    its advances where it has a table, hash to the values in tests/golden.json.
+   For the two faces that draw many sizes, lines of text and sheared letters
+   drawn at several sizes are part of the hash.
    --write-golden records them instead (done once, when the set is cut).
 """
 import ctypes
@@ -136,6 +138,25 @@ def pixels(lib, name):
                 for s in range(0x20, 0x7F):
                     adv.update(f"{lib.neuronte_advance(h, s, bold, em)},".encode())
         entry["advance_sha256"] = adv.hexdigest()
+    scaled = re.match(r"neuronte-ui-(scaled|large)-v\d+\.nrt", name)
+    if scaled:
+        # A face drawn at many sizes: lines of text as a program draws them,
+        # black and white to 32 px and blended above, and sheared letters.
+        ems = (17, 20, 24, 26, 27, 32) if scaled.group(1) == "scaled" else (33, 48, 64)
+        dig = hashlib.sha256()
+        for em in ems:
+            lib.neuronte_set_binary(h, 1 if em <= 32 else 0)
+            W, H = lib.neuronte_text_width(h, TEXT, len(TEXT), 1, em) + em + 4, 2 * em
+            for bold in (0, 1):
+                buf = np.zeros((H, W), np.uint32)
+                r = lib.neuronte_draw_text(h, buf.ctypes.data, W, W, H, 2, 0, em, bold, TEXT, len(TEXT), 0xFFFFFFFF)
+                dig.update(f"{em}:{bold}:{r};".encode() + buf.tobytes())
+            for s in (0x41, 0x67, 0x57, 0x38):
+                buf = np.zeros((H, 2 * em), np.uint32)
+                r = lib.neuronte_draw_scalar_styled(h, buf.ctypes.data, 2 * em, 2 * em, H, 2, 0, em, 2 * em, s,
+                                                    0xFFFFFFFF, 2)
+                dig.update(f"{em}:i:{s:x}:{r};".encode() + buf.tobytes())
+        entry["text_sha256"] = dig.hexdigest()
     lib.neuronte_close(h)
     return entry
 

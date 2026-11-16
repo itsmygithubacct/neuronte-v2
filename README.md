@@ -6,12 +6,14 @@ file, no glyph table and no bitmap atlas behind it. The weights are the
 font.
 
 This repository is **Neuronte 2**, the slim set: the C library and one
-packed net for each job, and nothing else. It is 47 MB. The full project,
+packed net for each job, and nothing else. It is 32 MB. The full project,
 with the training code, every generation of every net and the measurements
 behind them, is [Neuronte 0.1.x](https://github.com/itsmygithubacct/neuronte).
-Every net here is a file of Neuronte 0.1.2, copied byte for byte under the
-same name. The library is the source of 0.1.2 with one file added in 2.1.0,
-`src/bits.c`, which lays kept letters into a line of text.
+All but three of the nets are files of Neuronte 0.1.2, copied byte for byte
+under the same name; the three scalable desktop faces are new in 2.1.1. The
+library is the source of 0.1.2 with `src/bits.c`, which lays kept letters
+into a line of text, and with whole-pixel stems for scaled letters.
+[CHANGES.md](CHANGES.md) lists what each version added.
 
 ![The same ten lines, 8 to 48 px, drawn by Neuronte 2.1 and by DejaVu Sans](docs/neuronte-2.1-and-dejavu.png)
 
@@ -38,8 +40,8 @@ the desktop faces. Then draw your own:
 ./build/neuronte-say -s 64 -o big.pgm "Big"   # also writes an image
 ```
 
-Sizes from 1 to 32 use that size's own net; larger sizes use the scalable
-one. The source is [`demo/neuronte-say.c`](demo/neuronte-say.c), about a
+Sizes from 1 to 16 use that size's own net, 17 to 32 one scalable net, and
+larger sizes another. The source is [`demo/neuronte-say.c`](demo/neuronte-say.c), about a
 hundred lines, and shows the whole of the text interface.
 
 ## What it draws
@@ -47,9 +49,10 @@ hundred lines, and shows the whole of the text interface.
 | Job | File | In depth |
 |---|---|---|
 | Terminal text: ASCII, accented Latin, Greek, Russian, symbols, box and block characters, Braille | `neuronte-split-v8.nrt` | [split-v8][split-v8] |
-| Desktop text, 1 to 32 px, upright | `neuronte-ui1-v1.nrt` to `neuronte-ui32-v1.nrt` | [faces](#desktop-faces) |
-| Desktop text, 3 to 32 px, italic | `neuronte-ui3-italic-v1.nrt` to `neuronte-ui32-italic-v1.nrt` | [faces](#desktop-faces) |
-| Desktop text above 32 px | `neuronte-ui-large-v0.nrt` | [README, 0.1.x][readme] |
+| Desktop text, 1 to 16 px, upright | `neuronte-ui1-v1.nrt` to `neuronte-ui16-v1.nrt` | [faces](#desktop-faces) |
+| Desktop text, 3 to 16 px, italic | `neuronte-ui3-italic-v1.nrt` to `neuronte-ui16-italic-v1.nrt` | [faces](#desktop-faces) |
+| Desktop text, 17 to 32 px, upright and italic | `neuronte-ui-scaled-v0.nrt`, with `neuronte-ui-scaled-italic-advances-v0.nrt` | [scaled face](docs/neuronte-ui-scaled-v0.md) |
+| Desktop text above 32 px | `neuronte-ui-large-v1.nrt` | [large face](docs/neuronte-ui-large-v1.md) |
 | 300 colour emoji | `neuronte-emoji-v1.nrt` | [emoji-v1][emoji] |
 | 167 colour icons | `neuronte-icon-v2.nrt` | [icon-v2][icon] |
 | The Kilix flame | `neuronte-flame-v1.nrt` | [flame-v1][flame] |
@@ -78,12 +81,13 @@ make test     # checks every shipped file
 ```
 
 `make test` does four things. It verifies every checksum. It checks the
-packed text mask calls against a pixel loop. It draws every
-desktop face at its size, regular and bold, and compares each letter with
-the face's drawing in `font/`: a face may have at most 2 wrong pixels, none
-on a digit, and every advance must be exact. Today every face has 0. And it
-compares every net's pixels, over a fixed list of characters, with the
-values recorded in `tests/golden.json` when this set was cut.
+packed text mask calls against a pixel loop. It draws every desktop face
+from 1 to 16 px at its size, regular and bold, and compares each letter
+with the face's drawing in `font/`: a face may have at most 2 wrong pixels,
+none on a digit, and every advance must be exact. Today every face has 0.
+And it compares every net's pixels, over a fixed list of characters, and
+lines of text drawn by the two scalable faces, with the values recorded in
+`tests/golden.json` when this set was cut.
 
 ## Use it
 
@@ -105,7 +109,9 @@ neuronte_close(font);
 ```
 
 Desktop text is drawn a line at a time, with each letter's own width. Open
-the face for the size you want and draw at that size:
+the face for the size you want and draw at that size (from 17 px the file
+is `neuronte-ui-scaled-v0.nrt` for every size to 32, and above that
+`neuronte-ui-large-v1.nrt`):
 
 ```c
 neuronte *face;
@@ -149,20 +155,39 @@ times faster than Neuronte 0.1.1 at the same pixels. More:
 
 ## Desktop faces
 
-Each size from 1 to 32 px has its own net, because each size is its own
-hand-placed pixel design and not one shape scaled. A net reproduces its
-size exactly; no net draws another size's design. Above 32 px one net,
-`neuronte-ui-large-v0`, draws any size with smooth edges.
+Each size from 1 to 16 px has its own net, because each small size is its
+own hand-placed pixel design and not one shape scaled. A net reproduces its
+size exactly; no net draws another size's design.
 
-The faces were made in four groups, each with a card that gives the recipe,
-the acceptance rule and the measured speed of every face in it:
+From 17 to 32 px one file, `neuronte-ui-scaled-v0`, draws every size from
+one design, the strokes the hand faces were first fitted to. The library
+snaps its straight stems to whole pixels, so a stem is exactly 2 px wide
+from 17 to 26 px, and it draws black and white like the small faces. It is
+a different face from the hand-drawn ones it replaced, not a copy: against
+them about a third of the letter widths differ, by at most 2 px, and the
+shapes differ by some tens of pixels a letter. In exchange one 1.8 MB file
+does the work of 32 files of 17.4 MB. Italic is the same letters sheared as
+they are drawn (`NEURONTE_STYLE_ITALIC`), stepped by the advances in
+`neuronte-ui-scaled-italic-advances-v0`; `demo/neuronte-say.c` shows how.
+[Its card](docs/neuronte-ui-scaled-v0.md) has the measurements for every
+size. Scaled below 17 px the design is not good enough to ship, and below
+10 px it is not legible, which is why the small sizes stay hand-drawn.
+
+Above 32 px one file, `neuronte-ui-large-v1`, draws any size with smooth
+edges. It is the face of `neuronte-ui-large-v0` cut into four smaller nets
+and is about 13 times as fast the first time a size is used. It did not
+meet the accuracy limit set for it before it was trained (it is behind the
+old net at 32 px, a size it is not used for, and on its worst letter at 48
+and 96 px) and ships by the owner's decision;
+[its card](docs/neuronte-ui-large-v1.md) gives the numbers.
+
+The hand-drawn faces were made in groups, each with a card that gives the
+recipe, the acceptance rule and the measured speed of every face in it:
 
 | Faces | Card |
 |---|---|
-| 1 to 15 and 19 to 21 px; italics 3 to 12, 14 and 15 px | [small faces][faces-small] |
-| 16 to 18, 22, 23, 25 and 26 px; italics 13, 16 to 23, 25 and 26 px | [narrower single nets][faces-192-256] |
-| 24 and 27 to 30 px; italics 24, 28, 29 and 30 px | [faces cut into groups][faces-v1] |
-| 31 and 32 px; italics 27, 31 and 32 px | [wide faces][faces-wide] |
+| 1 to 15 px; italics 3 to 12, 14 and 15 px | [small faces][faces-small] |
+| 16 px; italics 13 and 16 px | [narrower single nets][faces-192-256] |
 
 A desktop also needs to know where a face sits in its cell and how wide
 each letter is. `font/ui-tops.json` gives the first, and each
@@ -190,7 +215,9 @@ each letter is. `font/ui-tops.json` gives the first, and each
 
 - The older files: `neuronte-split-v5`, the `-v0` desktop faces and the
   rest. A program that used them names the files above instead.
-- Native faces from 33 to 43 px. `neuronte-ui-large-v0` covers those sizes.
+- The hand-drawn faces from 17 to 43 px. `neuronte-ui-scaled-v0` and
+  `neuronte-ui-large-v1` cover those sizes; the hand-drawn ones are in
+  Neuronte 0.1.x and in Neuronte 2.1.0.
 - The learned video helpers. They are tied to `neuronte-split-v5`, so the
   player here has no `--helper` option, and its cells mode draws with
   `neuronte-split-v8`.
@@ -227,5 +254,3 @@ built with `make media`, links FFmpeg; see
 [pointer]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-pointer-v1.md
 [faces-small]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-v1-small.md
 [faces-192-256]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-v1-192-256.md
-[faces-v1]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-v1.md
-[faces-wide]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-wide-v1.md

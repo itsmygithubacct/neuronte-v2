@@ -3,10 +3,11 @@
  *
  *   neuronte-say [-s SIZE] [-b] [-i] [-o OUT.pgm] [-d WEIGHTS_DIR] TEXT...
  *
- * SIZE is the em in pixels, 1 to 128 (default 16). Sizes to 32 use that
- * size's own net and draw black and white; larger sizes use the scalable
- * net and draw with grey edges, which the terminal shows cut at half.
- * -b is bold, -i italic (3 to 32). -o also writes the pixels as a PGM
+ * SIZE is the em in pixels, 1 to 128 (default 16). Sizes to 16 use that
+ * size's own net and sizes 17 to 32 one scalable net; both draw black and
+ * white. Larger sizes use the large net and draw with grey edges, which
+ * the terminal shows cut at half. -b is bold, -i italic (3 to 32; from 17
+ * the upright letters sheared as they are drawn). -o also writes the pixels as a PGM
  * image. The faces hold printable ASCII and the ellipsis. MIT licence. */
 #include "neuronte.h"
 
@@ -28,7 +29,7 @@ int main(int argc, char **argv)
     int em = 16, bold = 0, italic = 0, i, w, h, x, y, top, bottom, rc;
     size_t len = 0;
     uint32_t *px;
-    neuronte *face;
+    neuronte *face, *slant = NULL;
 
     for (i = 1; i < argc && argv[i][0] == '-' && argv[i][1]; i++) {
         if (!strcmp(argv[i], "-b"))
@@ -65,10 +66,12 @@ int main(int argc, char **argv)
         len += n;
     }
 
-    if (em <= 32)
+    if (em <= 16)
         snprintf(path, sizeof path, "%s/neuronte-ui%d%s-v1.nrt", dir, em, italic ? "-italic" : "");
+    else if (em <= 32)
+        snprintf(path, sizeof path, "%s/neuronte-ui-scaled-v0.nrt", dir);
     else
-        snprintf(path, sizeof path, "%s/neuronte-ui-large-v0.nrt", dir);
+        snprintf(path, sizeof path, "%s/neuronte-ui-large-v1.nrt", dir);
     rc = neuronte_open_file(path, &face);
     if (rc != NEURONTE_OK) {
         fprintf(stderr, "%s: cannot open (%d). Run from the top of the tree or pass -d.\n", path, rc);
@@ -76,10 +79,20 @@ int main(int argc, char **argv)
     }
     if (em <= 32)
         neuronte_set_binary(face, 1);
+    if (italic && em > 16) {
+        /* The scalable net has no italic of its own: its letters are sheared,
+         * and stepped by the italic's own table of advances. */
+        snprintf(path, sizeof path, "%s/neuronte-ui-scaled-italic-advances-v0.nrt", dir);
+        rc = neuronte_open_file(path, &slant);
+        if (rc != NEURONTE_OK) {
+            fprintf(stderr, "%s: cannot open (%d)\n", path, rc);
+            return 1;
+        }
+    }
 
     /* Each letter's cell is em wide and two em high; leave an em at the right
      * for the last cell and for an italic's lean. */
-    w = neuronte_text_width(face, text, len, bold, em) + em + 2;
+    w = neuronte_text_width(slant ? slant : face, text, len, bold, em) + em + 2;
     h = 2 * em;
     if (w < 1 || (px = malloc((size_t)w * h * sizeof *px)) == NULL) {
         fprintf(stderr, "cannot lay out the text\n");
@@ -87,7 +100,20 @@ int main(int argc, char **argv)
     }
     for (i = 0; i < w * h; i++)
         px[i] = 0xFFFFFFFFu;
-    rc = neuronte_draw_text(face, px, w, w, h, 1, 0, em, bold, text, len, 0xFF000000u);
+    if (slant) {
+        size_t off = 0;
+        int pen = 1;
+        rc = 0;
+        while (off < len && rc >= 0) {
+            uint32_t c;
+            off += neuronte_utf8_decode(text + off, len - off, &c);
+            c = neuronte_advance_scalar(slant, c);
+            rc = neuronte_draw_scalar_styled(face, px, w, w, h, pen, 0, em, 2 * em, c, 0xFF000000u,
+                                             NEURONTE_STYLE_ITALIC | (bold ? NEURONTE_STYLE_BOLD : 0));
+            pen += neuronte_advance(slant, c, bold, em);
+        }
+    } else
+        rc = neuronte_draw_text(face, px, w, w, h, 1, 0, em, bold, text, len, 0xFF000000u);
     if (rc < 0) {
         fprintf(stderr, "draw failed (%d)\n", rc);
         return 1;
@@ -141,5 +167,7 @@ int main(int argc, char **argv)
     }
     free(px);
     neuronte_close(face);
+    if (slant)
+        neuronte_close(slant);
     return 0;
 }

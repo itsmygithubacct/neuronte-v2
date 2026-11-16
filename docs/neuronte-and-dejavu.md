@@ -11,6 +11,13 @@ FreeType through Pillow 11.1.0, and of Neuronte 2.1.0, both inside the
 use either. Where a number comes from a run, the script is in
 [`bench/`](../bench/).
 
+Neuronte 2.1.1 changed the sizes from 17 px up: one scalable net now draws
+17 to 32 px in place of a hand-drawn net for each size, and the net above
+32 px was replaced by a faster one. Everything here about sizes 1 to 16 px
+holds for 2.1.1. The rows for 24, 32 and 48 px, the picture's lower lines
+and the byte counts describe 2.1.0; [CHANGES.md](../CHANGES.md) has the
+new figures (30.6 MB of weights in all).
+
 ## In one table
 
 | | DejaVu Sans with FreeType | Neuronte 2 desktop faces |
