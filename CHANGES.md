@@ -27,7 +27,9 @@
   (C11, links only the library and libm) writes what the nets draw as five
   TrueType files: Neuronte Sans in four styles from the desktop faces (154
   characters) and Neuronte Mono from the terminal bundles in the weights
-  directory (3,205 characters with the files of 2.3.0). Each holds an
+  directory (4,958 characters with the files of 2.4.0: text first, then
+  a terminal's one-cell symbols; a bundle drawn for two cells or in
+  colour is left out). Each holds an
   outline of every character, traced from the net's coverage, and the nets'
   own pixels as embedded bitmaps for the small sizes (1 to 32 px for Sans).
   A file of bitmaps alone is rejected by Debian's fontconfig and Chromium
@@ -52,8 +54,9 @@
   writes it in a file that every process maps read-only.
   `neuronte-cells`, run by `neuronte-setup` as the step `30-cells`,
   draws ASCII and Latin-1 of the newest split bundle in four styles at
-  eight terminal cells (4.5 MB, 1.1 s on four threads of a Core
-  i7-6820HQ), and the status marks of a terminal's bars (the idle dot,
+  eight terminal cells, all the symbols of the `neuronte-kilix-*`
+  bundles at Kilix's cells (6.1 MB together, 1.3 s on four threads of a
+  Core i7-6820HQ), and the status marks of a terminal's bars (the idle dot,
   the moons, the sun and the cloud) for each bundle trained on them; the
   cells, characters, styles and marks are settings, for all bundles or
   one. A fresh process then has its first 95 ASCII cells at
@@ -64,7 +67,7 @@
 - `make test` also makes the files twice and checks them: the same bytes
   each time, every embedded bitmap exactly the library's pixels (15,616
   Sans glyphs and 1,330 Mono cells, none differs), every outline within
-  65 pixels of its net's 8,192, and 105 checks of the setup command. It
+  65 pixels of its net's 8,192, and 111 checks of the setup command. It
   compares every entry of a cells file with the library bit for bit and
   opens some 11,000 damaged cells files, also under AddressSanitizer.
 - `src/neuronte.c`, `include/neuronte.h` and every weight file are

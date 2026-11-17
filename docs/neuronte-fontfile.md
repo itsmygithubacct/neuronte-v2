@@ -29,10 +29,14 @@ face is Chromium's list of suggestions under the URL bar: see
 | `NeuronteSans-Bold.ttf` | Neuronte Sans, Bold | 154 | the same, the library's bold | 1 to 32 px, 1 bit |
 | `NeuronteSans-Italic.ttf` | Neuronte Sans, Italic | 154 | the same, the library's shear | 3 to 32 px, 1 bit |
 | `NeuronteSans-BoldItalic.ttf` | Neuronte Sans, Bold Italic | 154 | both | 3 to 32 px, 1 bit |
-| `NeuronteMono-Regular.ttf` | Neuronte Mono, Regular | 3,205 | the terminal bundles | 9, 12, 13, 15, 16, 17, 20 px, 8 bit, ASCII and Latin-1 |
+| `NeuronteMono-Regular.ttf` | Neuronte Mono, Regular | 4,958 | the terminal bundles | 9, 12, 13, 15, 16, 17, 20 px, 8 bit, ASCII and Latin-1 |
 
-1,772,584 bytes together with the weights of 2.3.0 (154,968, 159,784,
-163,276, 168,656 and 1,125,900).
+2,337,012 bytes together with the weights of 2.4.0 (154,968, 159,784,
+163,276, 168,656 and 1,690,328). The 4,958 of Neuronte Mono are the
+4,919 terminal characters of `neuronte-split-v9` and the ten
+`neuronte-term-*` bundles and the 39 symbols of
+`neuronte-kilix-chrome-v1`; with the weights of 2.3.0 it was 3,205
+characters in 1,125,900 bytes.
 
 **Characters.** A file maps exactly the characters its nets were trained
 on (`neuronte_untrained()` is 0) and nothing else. Neuronte Sans has the
@@ -40,12 +44,28 @@ on (`neuronte_untrained()` is 0) and nothing else. Neuronte Sans has the
 no-break space, and 57 accented letters and spacing accents of Latin-1.
 It does not have the other 38 Latin-1 characters, among them `£ ± × ÷ ß
 Æ ø § © « »`. Neuronte Mono has every character of the newest
-`neuronte-split-vN.nrt` and of every `neuronte-term-*.nrt` and
-`neuronte-kilix-*.nrt` in the weights directory, a character going to the
-first bundle trained on it, which is the order the terminal uses. The
-list of bundles is read from the directory each time, so a bundle added
-later is in the next file. Glyph 0, shown for a character the file does
-not have, is the library's own mark for an untrained character.
+`neuronte-split-vN.nrt`, of every `neuronte-term-*.nrt` and of every
+`neuronte-kilix-*.nrt` in the weights directory, in that order and by
+name within each, a character going to the first bundle trained on it:
+text before a terminal's own symbols. The list of bundles is read from
+the directory each time, so a bundle added later is in the next file.
+Glyph 0, shown for a character the file does not have, is the library's
+own mark for an untrained character.
+
+A glyph of Neuronte Mono is one cell, so a bundle whose drawings are
+made for another box is left out: one with a card `NAME.symbols.txt`
+beside it in the weights directory, which is how
+`neuronte-kilix-chrome-v2` (drawn for a box of two cells) and
+`neuronte-weather-colour-v1` (colour, in two halves) say what they
+are; a bundle of one-cell characters has `NAME.list.txt` or no card.
+Install the cards with the weights. With the weights of 2.4.0 the
+glyphs are the same without them (the file then differs only in its
+record of the weight files it was made from), because every symbol of
+`neuronte-kilix-chrome-v2` is drawn for one cell by a bundle before it,
+and the weather bundle is not a term or kilix bundle by name. The 39
+symbols of `neuronte-kilix-chrome-v1` are in the file: most are
+private-use code points of the symbol fonts that terminals print, drawn
+for one cell.
 
 **Outlines.** Each character's net is asked for its coverage of a cell
 64 px wide (`neuronte_coverage()`, one sample a pixel), and the line where
@@ -57,7 +77,7 @@ points where a drawn `H` has 12, because the net's edge is not perfectly
 straight.
 `make test` fills each outline again at 64 px and compares it with the
 net: the mean difference is 2 pixels of a cell's 8,192 for Sans and 5 for
-Mono, the worst 44, the limit 65.
+Mono, the worst 47, the limit 65.
 
 **Strikes.** Below 33 px the desktop faces are black and white pictures
 that a net was trained to draw at one size each (1 to 16 px) or snaps to
@@ -321,7 +341,7 @@ passes over keys it does not know.
 make
 sudo make install-setup            # PREFIX=/usr SYSCONFDIR=/etc UNITDIR=/usr/lib/systemd/system DESTDIR=
 sudoedit /etc/neuronte/setup.conf  # weights=/where/the/.nrt/files/are
-sudo neuronte-setup                # makes the files now: about 9 s on the machine timed below
+sudo neuronte-setup                # makes the files now: about 11 s on the machine timed below
 sudo systemctl enable neuronte-setup-early.service neuronte-setup.service
 sudo systemctl --global enable neuronte-setup-user.service   # when there are user steps
 ```
@@ -331,7 +351,9 @@ sudo systemctl --global enable neuronte-setup-user.service   # when there are us
 `/usr/lib/neuronte/setup.d`, the settings in `/etc/neuronte/setup.conf`
 (kept when one is there), the fontconfig file in `/etc/fonts/conf.d`,
 the two system units and the user unit, and this page and
-`neuronte-cells.md`. It does not install the weights or the library:
+`neuronte-cells.md`. It does not install the weights, their cards
+(`NAME.list.txt`, `NAME.symbols.txt`, which go where the weights go) or
+the library:
 the settings say where the weights are, and `neuronte-fontfile` and
 `neuronte-cells` are linked with the library's code, not with a shared
 library. A program that is to read cells files needs
@@ -360,40 +382,43 @@ late for the login screen.
 ### What a start costs
 
 Measured on a Core i7-6820HQ (4 cores, 8 threads), Debian 13, the
-weights of 2.3.0, under the machine's benchmark lock.
+weights of 2.4.0 (52 weight files, 56 MB), under the machine's benchmark
+lock.
 
 | Made in one run | 4 threads | 2 threads | 1 thread |
 |---|---:|---:|---:|
 | The four Sans files | 1.76 s | 3.14 s | 5.88 s |
-| Neuronte Mono | 3.87 s | 7.17 s | 13.6 s |
-| All five | 5.63 s | 10.33 s | 19.53 s |
+| Neuronte Mono | 5.50 s | 10.19 s | 19.16 s |
+| All five | 7.18 s | 13.19 s | 24.90 s |
 
-About 20 s of processor time for all five, however it is divided. The
-bytes are the same in every column. The Mono step used 47 MB of memory
-at most, as systemd counted it in a test container on another machine.
+About 25 s of processor time for all five, however it is divided. The
+bytes are the same in every column. With the weights of 2.3.0, a third
+fewer characters, Mono took 3.87, 7.17 and 13.6 s. Making Mono used 78
+MB of memory at most (peak resident size, measured on another machine;
+48 MB with the weights of 2.3.0).
 `fc-cache` on the directory then takes 2.02 s, of which 2 s is a pause it
 makes itself after writing a cache; the early step starts it and does not
 wait for it. A program that looks before the cache is written reads the
 directory itself, which gives the same answer.
 
 **A normal start** finds the files current. `neuronte-setup --early`
-takes 5 to 11 ms (the medians of 20 were 10.9 ms in one run and 5.5 ms
-in another, an hour apart) and the whole of `neuronte-setup`, three
-steps, 15 ms; a step's own check is 2 ms of that and the rest is
-starting shells. `neuronte-setup --user` with no user step is 4 ms. No
-net is opened and no file is read beyond its size and time. With
-`--verify`, which reads and hashes all 43 MB of weights, a check takes
-190 ms.
+takes 5 to 11 ms (the medians of 20 were 10.9, 5.5 and 11.2 ms in
+three runs, hours apart) and the whole of `neuronte-setup`, three
+steps, 15 to 18 ms; a step's own check is 2 to 3 ms of that and the
+rest is starting shells. `neuronte-setup --user` with no user step is 4
+to 8 ms. No net is opened and no file is read beyond its size and time.
+With `--verify`, which reads and hashes the 45 weight files the fonts
+are made from, 50 MB, a check takes 243 ms.
 
 **A first start with nothing made** (the installer did not run
 `neuronte-setup`, or the weights were replaced): the early unit makes the
 Sans files, which holds the login screen back by 1.8 s with the four
 threads of the settings as shipped (3.1 s with two, 5.9 s with one). The
 login screen then has a font. Mono follows in the background,
-about 4 s later (7 s with two threads, 14 s with one), `fc-cache`
-pauses its 2 s after that, and the cells files take 1.1 s more (3.7 s
-with one thread): 7.0 s in all for what follows the login screen, 20 s
-with one thread. These times are of a machine doing nothing
+about 5.5 s later (10 s with two threads, 19 s with one), `fc-cache`
+pauses its 2 s after that, and the cells files take 1.3 s more (4.3 s
+with one thread): 8.9 s in all for what follows the login screen, 14.5
+s with two threads, 25.7 s with one. These times are of a machine doing nothing
 else; a start with other services running at the same moment was not
 measured and will be slower. Until it is there:
 
@@ -456,7 +481,7 @@ Neuronte Mono at the cell sizes of the terminal's font sizes from 7 to
 - `tests/test_cells.c`, twice, the second time under AddressSanitizer:
   every entry of a cells file against the library, and damaged files
   (`docs/neuronte-cells.md`).
-- `tests/check_setup.sh`: 105 checks of `neuronte-setup` and the three
+- `tests/check_setup.sh`: 111 checks of `neuronte-setup` and the three
   steps in a directory of its own: nothing made, `--early`, the rest, a
   run when current changes no file, time or directory entry; a touched
   file is current, a changed or removed one is made again as it was; a

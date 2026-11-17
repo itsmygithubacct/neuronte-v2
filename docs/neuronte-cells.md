@@ -154,10 +154,11 @@ Where the defaults come from:
   misses every time until `cells=` names it: the cell depends on the
   font size and the display, which setup cannot know.
 - **The characters** are ASCII and Latin-1, of which `neuronte-split-v9`
-  is trained on 189. The four `neuronte-term-*` bundles are trained on
-  no ASCII or Latin-1 character (one of them on a single one), so as
-  shipped they get no cells file worth the name: their characters are
-  uncommon by nature. `all` is a setting, and what it costs is below.
+  is trained on 189. The `neuronte-term-*` bundles (ten in 2.4.0) are
+  trained on no ASCII or Latin-1 character (one of them on a single
+  one), so as shipped they get no cells file but for that character and
+  the status marks: their characters are uncommon by nature. `all` is a
+  setting, and what it costs is below.
 - **The status marks** are what Kilix shows in one cell of a tab's
   title and of its bars and none of its fonts has: the idle dot
   (U+2022 and U+25CF), the eight moons (U+1F311 to U+1F318), and the
@@ -172,32 +173,53 @@ Where the defaults come from:
   cells file for them. A bundle that is not installed is not looked
   for. A mark the other settings already draw at a cell is in the file
   once. Kilix's first drawing of its 51 bar symbols at 9x18 was
-  measured by its worker at 53.1 ms without cells files, 13.7 ms with
+  measured at 53.1 ms without cells files, 13.7 ms with
   the files as they were before this set, and 11.2 ms with the marks
   in them.
 - **A `neuronte-kilix-*` bundle** is small and is Kilix's own: all its
   characters, regular only, at Kilix's five cells and at the two-cell
   boxes of each, which Kilix asks for at twice the width and twice the
-  height (16x34, 18x36, 20x38, 20x40, 24x48). No such bundle is in this
-  repository yet; the rule is tested with another weight file under
-  such a name.
+  height (16x34, 18x36, 20x38, 20x40, 24x48). 2.4.0 has two:
+  `neuronte-kilix-chrome-v1`, drawn for one cell, and
+  `neuronte-kilix-chrome-v2`, drawn for the two-cell box, which a
+  program asks for at exactly those five larger cells (18x36 for a cell
+  of 9x18). Both get all ten: Kilix asks the one-cell bundle for the
+  larger cells too where the two-cell bundle is not installed; the five
+  one-cell sizes of the two-cell bundle are asked by
+  no program known here and cost 0.16 MB. The rule is also tested with
+  another weight file under such a name.
+- **A colour net** gets no cells file, whatever names it:
+  `neuronte-weather-colour-v1` is not looked at as shipped, and is
+  refused when a setting names it.
 
-What they cost, same machine, the weights of 2.3.0:
+What they cost, same machine, the weights of 2.4.0:
 
 | Made | 4 threads | 1 thread | On disk |
 |---|---:|---:|---:|
-| As shipped but with `cells_marks=none`: 189 characters of split-v9, 8 cells, 4 styles (6,048 entries) | 1.08 s | 3.64 s | 4.5 MB |
-| The status marks, as shipped: 20 more entries with the weights of 2.3.0 | 0.02 s more | 0.02 s more | 16 KB more |
-| `cells_chars=all`, `cells_styles=regular`: 3,205 characters of five bundles | 2.84 s | not measured | 19 MB |
-| `cells_chars=all`, four styles: 102,560 entries | 10.6 s | 37.3 s | 73 MB |
+| As shipped: six files, 6,940 entries | 1.32 s | 4.21 s | 6.1 MB |
+| of that, ASCII and Latin-1 of split-v9, 8 cells, 4 styles (6,048 entries) | 1.08 s | 3.64 s | 4.5 MB |
+| of that, the status marks (60 entries in three files) | 0.03 s | not measured | 48 KB |
+| of that, the two `neuronte-kilix-*` bundles (800 entries) | 0.16 s | 0.49 s | 1.6 MB |
+| `cells_chars=all`, `cells_styles=regular`: 4,919 terminal characters of eleven bundles, and the two above | 4.26 s | not measured | 31 MB |
+| `cells_chars=all`, four styles: 158,208 entries | 15.4 s | 52.9 s | 118 MB |
 
-The status marks' row is the difference of two medians of 7 runs
-(1.104 s against 1.085 s with four threads, 3.694 s against 3.677 s
-with one), which is close to the spread of the runs. Their 16 KB are 8
-KB more in the cells file of split-v9 and a new file of 8 KB for
-`neuronte-term-dingbat-v1`; `neuronte-term-rest-v1`, which is not among
-the weights of 2.3.0, adds a file of 32 KB for the eight moons where it
-is installed.
+The six files as shipped: `neuronte-split-v9.cells` 4,471,520 bytes,
+`neuronte-kilix-chrome-v2.cells` 807,008, `neuronte-kilix-chrome-v1.cells`
+767,648, `neuronte-term-rest-v1.cells` 32,000 (the moons),
+`neuronte-term-symbol-v1.cells` 23,744 (its one Latin-1 character) and
+`neuronte-term-dingbat-v1.cells` 8,096 (the sun and the cloud):
+6,110,016 bytes. With two threads the step takes 2.30 s. With the
+weights of 2.3.0, which had neither the kilix bundles nor
+`neuronte-term-rest-v1`, it was 4.5 MB in 1.10 s; with them `all` in
+four styles was 102,560 entries, 73 MB, in 10.6 s.
+
+The first row is the median of 5 runs. The split bundle's row is what
+the step took with the weights of 2.3.0 and no status marks, when it
+made little else (the median of 7 runs). The other two rows are
+differences from the first row: 5 runs with `cells_marks=none` (1.294
+s, which is within the spread of the runs: with the weights of 2.3.0
+the marks added 0.02 s with four threads and with one), and 5 runs with
+the two kilix bundles given no cells (1.164 s and 3.725 s).
 
 The bytes are the same at any number of threads. With
 `cells_chars=all` the cells file of split-v9 is 31.7 MB and opens in
