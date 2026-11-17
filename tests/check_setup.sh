@@ -30,7 +30,9 @@
 #    changed and its size and time kept is found by --verify only; a cells
 #    file nobody asks for any more and what a stopped run left are removed;
 #    a bundle with a colour net gets none; a mistake in a setting fails the
-#    step; one thread and several write the same bytes.
+#    step; one thread and several write the same bytes. The status marks
+#    are added in the regular style at their own cells, once where the
+#    other settings already draw them, and cells_marks=none leaves them out.
 # It leaves BUILD_DIR/setup-test/state/fonts for tests/check_fontfile.py.
 set -u
 build=${1:?usage: check_setup.sh BUILD_DIR [THREADS]}
@@ -94,6 +96,9 @@ expect 0 "--check when everything is made" $setup --check
 is "the fonts directory is readable by every user" "$(stat -c %a "$fonts")" = 755
 is "the font files are readable by every user" "$(stat -c %a "$fonts/NeuronteSans-Regular.ttf")" = 644
 is "the run made the newest split bundle's cells file" -s "$state/cells/neuronte-split-v9.cells"
+# The sun and the cloud at Kilix's five cells: 2 characters, 976 pixels.
+is "a bundle with no ASCII has a cells file for its status marks" \
+    "$(stat -c %s "$state/cells/neuronte-term-dingbat-v1.cells")" = $((128 + 16 * 10 + 4 * 2 * 976))
 is "the cells file is readable by every user" \
     "$(stat -c %a "$state/cells" "$state/cells/neuronte-split-v9.cells" | tr '\n' ' ')" = "755 644 "
 left=$(find "$state" -name '*.tmp' | wc -l)
@@ -232,7 +237,7 @@ is "a user's run changed nothing of the system's" "$(sha "$t/before.txt")" = "$(
 cs=$t/cells-state
 split=$cs/cells/neuronte-split-v9.cells
 conf() {
-    printf 'weights=%s\nstate=%s\nthreads=%s\n' "$root/weights" "$cs" "$threads" > "$t/cells.conf"
+    printf 'weights=%s\nstate=%s\nthreads=%s\ncells_marks=none\n' "$root/weights" "$cs" "$threads" > "$t/cells.conf"
     [ $# = 0 ] || printf '%s\n' "$@" >> "$t/cells.conf"
 }
 cells="env NEURONTE_SETUP_CONF=$t/cells.conf $setup --only 30-cells"
@@ -275,6 +280,23 @@ find "$cs" ! -name setup.lock -exec stat -c '%n %i %s %y' {} + | sort > "$t/befo
 expect 0 "the cells step when current" $cells
 find "$cs" ! -name setup.lock -exec stat -c '%n %i %s %y' {} + | sort > "$t/after.txt"
 is "the cells step when current changes nothing" "$(sha "$t/before.txt")" = "$(sha "$t/after.txt")"
+# The status marks. The split bundle is trained on two of them (the dots).
+# Asked for at 9x18 and 5x10 with ASCII and Latin-1 at 9x18 regular, they add
+# two entries at 9x18 and two at 5x10; with the dots already among the
+# characters, only the two at 5x10.
+conf 'cells=9x18' 'cells_styles=regular' 'cells_marks=2022,25CF,2600,2601,1F311-1F318' 'cells_marks_cells=9x18,5x10'
+expect 0 "status marks beside the characters" $cells
+is "they are drawn at their cells, regular" "$(stat -c %s "$split")" = $((128 + 16 * (189 + 4) + 4 * (189 * 162 + 2 * 162 + 2 * 50)))
+is "a bundle trained only on marks has a cells file" \
+    "$(stat -c %s "$cs/cells/neuronte-term-dingbat-v1.cells")" = $((128 + 16 * 4 + 4 * 2 * (162 + 50)))
+expect 0 "--verify with status marks" $tool --verify --threads "$threads"
+conf 'cells=9x18' 'cells_styles=regular' 'cells_chars=latin1,2022,25CF' 'cells_marks=2022,25CF' 'cells_marks_cells=9x18,5x10'
+expect 0 "status marks that the characters already hold" $cells
+is "they are in the file once" "$(stat -c %s "$split")" = $((128 + 16 * (191 + 2) + 4 * (191 * 162 + 2 * 50)))
+conf 'cells=9x18' 'cells_styles=regular' 'cells_marks=none'
+expect 0 "no status marks" $cells
+is "cells_marks=none leaves them out" "$(stat -c %s "$split")" = $((128 + 16 * 189 + 4 * 189 * 162))
+is "and the bundle trained only on marks has no file" ! -e "$cs/cells/neuronte-term-dingbat-v1.cells"
 # A bundle of Kilix's own, by its name: all its characters, regular, at
 # Kilix's cells and their two-cell boxes. A desktop face stands in for it.
 mkdir -p "$t/kilix-weights"

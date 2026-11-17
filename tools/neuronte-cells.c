@@ -4,6 +4,7 @@
  *
  *   neuronte-cells --weights DIR --out DIR [--stamp FILE] [--conf FILE]
  *                  [--cells LIST] [--chars SET] [--styles LIST]
+ *                  [--marks SET] [--marks-cells LIST]
  *                  [--check] [--verify] [--force] [--threads N] [--list]
  *                  [--verbose]
  *
@@ -23,6 +24,18 @@
  * from --cells, --chars, --styles; else from cells, cells_chars,
  * cells_styles in the file; else the default below. Samples per axis is 0,
  * the library's own choice, which is what the terminals pass.
+ *
+ * The status marks are a second, small set that the terminal bundles (the
+ * split, term and kilix ones) get on top of that, in the regular style:
+ *   marks        characters, written as chars is; none for no such set
+ *   marks cells  the cells they are drawn at
+ * read the same way, as cells_marks and cells_marks_cells, with or without
+ * .NAME, or from --marks and --marks-cells. They are what Kilix draws in
+ * one cell of a tab's title and of its bars and no font of Kilix's has:
+ * the idle dot (U+2022, U+25CF), the eight moons (U+1F311 to U+1F318), and
+ * the sun and the cloud (U+2600, U+2601), at Kilix's five cells. Each
+ * bundle draws those of them it is trained on, so a bundle with no ASCII
+ * still gets a cells file for its marks.
  *
  * Defaults. The cells are the ones the two terminals ask for. The
  * Neuronte-only terminal's cell is round(0.6 em) wide and twice as high:
@@ -62,6 +75,8 @@
 #define TERMINAL_CELLS "7x14,8x16,8x17,9x18,10x19,10x20,11x22,12x24"
 #define KILIX_CELLS "8x17,9x18,10x19,10x20,12x24,16x34,18x36,20x38,20x40,24x48"
 #define ALL_STYLES "regular,bold,italic,bolditalic"
+#define STATUS_MARKS "2022,25CF,2600,2601,1F311-1F318"
+#define MARKS_CELLS "8x17,9x18,10x19,10x20,12x24"
 #define MAX_BUNDLES 64
 #define MAX_SETTINGS 256
 #define MAX_BOXES 64
@@ -74,14 +89,14 @@ struct setting {
 
 struct bundle {
     char name[256]; /* without .nrt */
-    const char *cells, *chars, *styles;
+    const char *cells, *chars, *styles, *marks, *marks_cells;
     char line[LINE_LEN]; /* its stamp line up to the options */
     char rest[256];      /* and after them */
 };
 
 static struct setting settings[MAX_SETTINGS];
 static int nsettings, verbose;
-static const char *opt_cells, *opt_chars, *opt_styles;
+static const char *opt_cells, *opt_chars, *opt_styles, *opt_marks, *opt_marks_cells;
 
 static void die(int code, const char *fmt, ...)
 {
@@ -212,14 +227,15 @@ static int find_bundles(const char *wdir, struct bundle *b)
         }
     for (i = 0; i < count && n < MAX_BUNDLES; i++) {
         int kilix = !strncmp(names[i], "neuronte-kilix-", 15);
-        int wanted = !strcmp(names[i], split) || !strncmp(names[i], "neuronte-term-", 14) || kilix ||
-                     setting("cells", names[i]) || setting("cells_chars", names[i]);
-        if (!wanted)
+        int terminal = !strcmp(names[i], split) || !strncmp(names[i], "neuronte-term-", 14) || kilix;
+        if (!terminal && !setting("cells", names[i]) && !setting("cells_chars", names[i]))
             continue;
         memcpy(b[n].name, names[i], sizeof b[n].name);
         b[n].cells = pick("cells", names[i], opt_cells, kilix ? KILIX_CELLS : TERMINAL_CELLS);
         b[n].chars = pick("cells_chars", names[i], opt_chars, kilix ? "all" : "latin1");
         b[n].styles = pick("cells_styles", names[i], opt_styles, kilix ? "regular" : ALL_STYLES);
+        b[n].marks = pick("cells_marks", names[i], opt_marks, terminal ? STATUS_MARKS : "none");
+        b[n].marks_cells = pick("cells_marks_cells", names[i], opt_marks_cells, MARKS_CELLS);
         n++;
     }
     return n;
@@ -280,6 +296,12 @@ static unsigned parse_styles(const char *list)
         mask |= 1u << i;
     }
     return mask;
+}
+
+static size_t nstyles(const char *list)
+{
+    unsigned mask = parse_styles(list);
+    return (mask & 1) + (mask >> 1 & 1) + (mask >> 2 & 1) + (mask >> 3 & 1);
 }
 
 /* The scalars of a set that the bundle is trained on, in rising order. */
@@ -417,10 +439,11 @@ static void file_mark(const char *path, char *out, size_t size)
 static size_t plan(const struct bundle *b, const char *wpath, neuronte **handle,
                    struct neuronte_cells_key **keys, size_t *nchars, int *nboxes, const char **why)
 {
-    int boxes[MAX_BOXES][2], nb = parse_boxes(b->cells, boxes), i;
+    int boxes[MAX_BOXES][2], mboxes[MAX_BOXES][2], i;
+    int nb = parse_boxes(b->cells, boxes), nmb = parse_boxes(b->marks_cells, mboxes);
     unsigned styles = parse_styles(b->styles), style;
-    uint32_t *chars = NULL;
-    size_t nc, count = 0, j;
+    uint32_t *chars = NULL, *marks = NULL;
+    size_t nc, nm, count = 0, j;
     neuronte *n = NULL;
     *keys = NULL;
     *handle = NULL;
@@ -438,14 +461,20 @@ static size_t plan(const struct bundle *b, const char *wpath, neuronte **handle,
         return 0;
     }
     nc = parse_chars(b->chars, n, &chars);
+    nm = parse_chars(b->marks, n, &marks);
+    if (!nb || !styles)
+        nc = 0;
+    if (!nmb)
+        nm = 0;
     *nchars = nc;
-    if (!nb || !styles || !nc) {
+    if (!nc && !nm) {
         free(chars);
+        free(marks);
         *why = !nb ? "no cells asked for" : !styles ? "no styles asked for" :
                "trained on none of the characters asked for";
         return 0;
     }
-    *keys = malloc(nc * (size_t)nb * 4 * sizeof **keys);
+    *keys = malloc((nc * (size_t)nb * 4 + nm * (size_t)nmb) * sizeof **keys);
     if (!*keys)
         die(1, "out of memory");
     for (i = 0; i < nb; i++)
@@ -458,7 +487,28 @@ static size_t plan(const struct bundle *b, const char *wpath, neuronte **handle,
                 k->samples = 0;
                 k->style = (uint8_t)style;
             }
+    /* The status marks, regular, where the lines above did not draw them. */
+    for (i = 0; i < nmb; i++) {
+        int b2, in_boxes = 0;
+        for (b2 = 0; b2 < nb; b2++)
+            in_boxes |= boxes[b2][0] == mboxes[i][0] && boxes[b2][1] == mboxes[i][1];
+        for (j = 0; j < nm; j++) {
+            struct neuronte_cells_key *k;
+            size_t c, drawn = 0;
+            for (c = 0; c < nc && in_boxes && (styles & 1); c++)
+                drawn |= chars[c] == marks[j];
+            if (drawn)
+                continue;
+            k = &(*keys)[count++];
+            k->scalar = marks[j];
+            k->cell_w = (uint16_t)mboxes[i][0];
+            k->cell_h = (uint16_t)mboxes[i][1];
+            k->samples = 0;
+            k->style = 0;
+        }
+    }
     free(chars);
+    free(marks);
     return count;
 }
 
@@ -510,8 +560,9 @@ static void make(struct bundle *b, const char *wdir, const char *odir, int threa
     file_mark(opath, mark, sizeof mark);
     text(b->rest, sizeof b->rest, "entries %zu file %s", count, mark);
     if (verbose)
-        fprintf(stderr, "neuronte-cells: %s: %zu entries (%zu characters, %d cells), %zu bytes, %.2f s\n",
-                b->name, count, nchars, nboxes, 128 + 16 * count + 4 * floats, now() - t0);
+        fprintf(stderr, "neuronte-cells: %s: %zu entries (%zu characters, %d cells, and %zu for status marks), "
+                "%zu bytes, %.2f s\n", b->name, count, nchars, nboxes,
+                count - nchars * (size_t)nboxes * nstyles(b->styles), 128 + 16 * count + 4 * floats, now() - t0);
     free(block);
     free(cells);
     free(keys);
@@ -577,6 +628,8 @@ int main(int argc, char **argv)
         else if (!strcmp(a, "--cells")) value = &opt_cells;
         else if (!strcmp(a, "--chars")) value = &opt_chars;
         else if (!strcmp(a, "--styles")) value = &opt_styles;
+        else if (!strcmp(a, "--marks")) value = &opt_marks;
+        else if (!strcmp(a, "--marks-cells")) value = &opt_marks_cells;
         else if (!strcmp(a, "--threads") && i + 1 < argc) threads = atoi(argv[++i]);
         else if (!strcmp(a, "--check")) check = 1;
         else if (!strcmp(a, "--verify")) check = deep = 1;
@@ -603,13 +656,17 @@ int main(int argc, char **argv)
         int boxes[MAX_BOXES][2];
         struct bundle *b = &bundles[i];
         parse_boxes(b->cells, boxes); /* a mistake in a setting stops here, before anything is made */
+        parse_boxes(b->marks_cells, boxes);
         parse_styles(b->styles);
         text(path, sizeof path, "%s/%s.nrt", wdir, b->name);
         file_mark(path, mark, sizeof mark);
         text(b->line, sizeof b->line, "bundle %s weight %s options cells=%s chars=%s styles=%s",
                  b->name, mark, b->cells, b->chars, b->styles);
+        text(b->line + strlen(b->line), sizeof b->line - strlen(b->line), " marks=%s marks_cells=%s",
+             b->marks, b->marks_cells);
         if (list)
-            printf("%s cells=%s chars=%s styles=%s\n", b->name, b->cells, b->chars, b->styles);
+            printf("%s cells=%s chars=%s styles=%s marks=%s marks_cells=%s\n", b->name, b->cells, b->chars,
+                   b->styles, b->marks, b->marks_cells);
     }
     if (list)
         return 0;

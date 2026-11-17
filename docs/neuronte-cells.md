@@ -114,6 +114,7 @@ not read at open: a float changed on the disk is not seen there.
 ```
 neuronte-cells --weights DIR --out DIR [--stamp FILE] [--conf FILE]
                [--cells LIST] [--chars SET] [--styles LIST]
+               [--marks SET] [--marks-cells LIST]
                [--check] [--verify] [--force] [--threads N] [--list] [--verbose]
 ```
 
@@ -137,7 +138,9 @@ Settings, in `/etc/neuronte/setup.conf`:
 | `cells` | the cells, `WxH` with commas | `7x14,8x16,8x17,9x18,10x19,10x20,11x22,12x24` |
 | `cells_chars` | `ascii`, `latin1`, `all`, `none`, or scalars and ranges in hexadecimal (`2500-257F`) | `latin1` |
 | `cells_styles` | `regular`, `bold`, `italic`, `bolditalic` | all four |
-| `cells.NAME`, `cells_chars.NAME`, `cells_styles.NAME` | the same for one weight file (its name without `.nrt`) | |
+| `cells_marks` | the status marks: characters drawn on top of those, regular only; `none` for none | `2022,25CF,2600,2601,1F311-1F318` |
+| `cells_marks_cells` | the cells the status marks are drawn at | `8x17,9x18,10x19,10x20,12x24` |
+| any of the five with `.NAME` | the same for one weight file (its name without `.nrt`) | |
 
 Where the defaults come from:
 
@@ -155,6 +158,23 @@ Where the defaults come from:
   no ASCII or Latin-1 character (one of them on a single one), so as
   shipped they get no cells file worth the name: their characters are
   uncommon by nature. `all` is a setting, and what it costs is below.
+- **The status marks** are what Kilix shows in one cell of a tab's
+  title and of its bars and none of its fonts has: the idle dot
+  (U+2022 and U+25CF), the eight moons (U+1F311 to U+1F318), and the
+  sun and the cloud (U+2600, U+2601). They are few and are on the
+  screen from the first frame, and they lie outside ASCII and Latin-1,
+  in three bundles: the dots in `neuronte-split-v9`, the sun and cloud
+  in `neuronte-term-dingbat-v1`, the moons in `neuronte-term-rest-v1`.
+  So they are a set of their own: every terminal bundle (split, term,
+  kilix) draws those of them it is trained on, in the regular style
+  (Kilix asks through `neuronte_coverage()`), at Kilix's five one-cell
+  sizes, and a bundle with none of the other characters still gets a
+  cells file for them. A bundle that is not installed is not looked
+  for. A mark the other settings already draw at a cell is in the file
+  once. Kilix's first drawing of its 51 bar symbols at 9x18 was
+  measured by its worker at 53.1 ms without cells files, 13.7 ms with
+  the files as they were before this set, and 11.2 ms with the marks
+  in them.
 - **A `neuronte-kilix-*` bundle** is small and is Kilix's own: all its
   characters, regular only, at Kilix's five cells and at the two-cell
   boxes of each, which Kilix asks for at twice the width and twice the
@@ -166,9 +186,18 @@ What they cost, same machine, the weights of 2.3.0:
 
 | Made | 4 threads | 1 thread | On disk |
 |---|---:|---:|---:|
-| As shipped: 189 characters of split-v9, 8 cells, 4 styles (6,048 entries) | 1.08 s | 3.64 s | 4.5 MB |
+| As shipped but with `cells_marks=none`: 189 characters of split-v9, 8 cells, 4 styles (6,048 entries) | 1.08 s | 3.64 s | 4.5 MB |
+| The status marks, as shipped: 20 more entries with the weights of 2.3.0 | 0.02 s more | 0.02 s more | 16 KB more |
 | `cells_chars=all`, `cells_styles=regular`: 3,205 characters of five bundles | 2.84 s | not measured | 19 MB |
 | `cells_chars=all`, four styles: 102,560 entries | 10.6 s | 37.3 s | 73 MB |
+
+The status marks' row is the difference of two medians of 7 runs
+(1.104 s against 1.085 s with four threads, 3.694 s against 3.677 s
+with one), which is close to the spread of the runs. Their 16 KB are 8
+KB more in the cells file of split-v9 and a new file of 8 KB for
+`neuronte-term-dingbat-v1`; `neuronte-term-rest-v1`, which is not among
+the weights of 2.3.0, adds a file of 32 KB for the eight moons where it
+is installed.
 
 The bytes are the same at any number of threads. With
 `cells_chars=all` the cells file of split-v9 is 31.7 MB and opens in
@@ -211,4 +240,5 @@ file can be added without breaking them. It is not built.
   check value made right for the damage, so that the checks behind it
   are reached: those that open (about 460) are read through, every
   float of every entry, in memory of exactly the file's size.
-- `tests/check_setup.sh`, part 9: the step and the settings.
+- `tests/check_setup.sh`, part 9: the step and the settings, the
+  status marks among them.

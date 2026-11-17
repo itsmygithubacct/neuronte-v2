@@ -32,8 +32,10 @@
   `neuronte-cells`, run by `neuronte-setup` as the step `30-cells`,
   draws ASCII and Latin-1 of the newest split bundle in four styles at
   eight terminal cells (4.5 MB, 1.1 s on four threads of a Core
-  i7-6820HQ); the cells, characters and styles are settings, for all
-  bundles or one. A fresh process then has its first 95 ASCII cells at
+  i7-6820HQ), and the status marks of a terminal's bars (the idle dot,
+  the moons, the sun and the cloud) for each bundle trained on them; the
+  cells, characters, styles and marks are settings, for all bundles or
+  one. A fresh process then has its first 95 ASCII cells at
   9x18 in 0.2 ms in place of 23 ms, and ASCII and Latin-1 in four styles
   in 0.33 ms in place of 407 ms. A program must ask the file to gain
   this; none here does yet. Colour glyphs are not covered.
@@ -41,7 +43,7 @@
 - `make test` also makes the files twice and checks them: the same bytes
   each time, every embedded bitmap exactly the library's pixels (15,616
   Sans glyphs and 1,330 Mono cells, none differs), every outline within
-  65 pixels of its net's 8,192, and 95 checks of the setup command. It
+  65 pixels of its net's 8,192, and 105 checks of the setup command. It
   compares every entry of a cells file with the library bit for bit and
   opens some 11,000 damaged cells files, also under AddressSanitizer.
 - `src/neuronte.c`, `include/neuronte.h` and every weight file are

@@ -456,7 +456,7 @@ Neuronte Mono at the cell sizes of the terminal's font sizes from 7 to
 - `tests/test_cells.c`, twice, the second time under AddressSanitizer:
   every entry of a cells file against the library, and damaged files
   (`docs/neuronte-cells.md`).
-- `tests/check_setup.sh`: 95 checks of `neuronte-setup` and the three
+- `tests/check_setup.sh`: 105 checks of `neuronte-setup` and the three
   steps in a directory of its own: nothing made, `--early`, the rest, a
   run when current changes no file, time or directory entry; a touched
   file is current, a changed or removed one is made again as it was; a
