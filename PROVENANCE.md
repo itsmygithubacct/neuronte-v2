@@ -80,6 +80,20 @@ starts from random initialisation and sees only the targets above.
 - `make test` checks the hashes of the shipped models and compares the C
   library with an independent numpy evaluation.
 
+## Font files made from the nets
+
+`tools/neuronte-fontfile.c` writes TrueType files for programs that
+cannot run a net ([docs/neuronte-fontfile.md](docs/neuronte-fontfile.md)).
+Their only inputs are the weight files: every outline is traced from a
+net's coverage, every embedded bitmap is what the library draws, every
+advance is from a net's advance table, and the vertical metrics are
+measured from that ink. The generator opens no font and links no font
+library; the table layouts are written from the OpenType specification.
+The family names, Neuronte Sans and Neuronte Mono, are this project's.
+The check in `make test` reads the files with a reader of its own; where
+Pillow is installed it also loads these files, and only these, through
+FreeType.
+
 ## Licence scope
 
 MIT, copyright 2026 itsmygithubacct. See [LICENSE](LICENSE). The licence

@@ -1,0 +1,17 @@
+#!/bin/sh
+# A step of neuronte-setup: the Neuronte Mono font file, every character
+# the terminal bundles in the weights directory were trained on. It takes
+# several times as long as the Sans files, so it is not one of the early
+# steps: until it is there, a program that asks fontconfig for a monospace
+# font is given Neuronte Sans (docs/neuronte-fontfile.md).
+set -u
+step=25-fontfile-mono
+word=${1-}
+set -- --weights "${NEURONTE_WEIGHTS:?}" --out "${NEURONTE_STATE:?}/fonts" \
+    --stamp "$NEURONTE_STATE/$step.stamp" --faces mono
+case $word in
+check) exec "${NEURONTE_FONTFILE:-neuronte-fontfile}" "$@" --check ;;
+run) exec "${NEURONTE_FONTFILE:-neuronte-fontfile}" "$@" --threads "${NEURONTE_THREADS:-4}" \
+    ${NEURONTE_FORCE:+--force} ;;
+*) echo "usage: $step check|run" >&2; exit 2 ;;
+esac

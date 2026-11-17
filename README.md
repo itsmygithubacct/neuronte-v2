@@ -58,6 +58,7 @@ hundred lines, and shows the whole of the text interface.
 | The Kilix flame | `neuronte-flame-v1.nrt` | [flame-v1][flame] |
 | A mouse pointer | `neuronte-pointer-v1.nrt` | [pointer-v1][pointer] |
 | Video in a terminal | `neuronte-video-masks-v0.nrt` | [the video player](tools/neuronte-video.md) |
+| Text in programs that cannot run a net (a browser, GTK and Qt programs): TrueType files made from the desktop faces and the terminal bundles | every file above that draws text | [font files](docs/neuronte-fontfile.md) |
 
 [FILES.md](FILES.md) lists every file with its size, its checksum and the
 file of Neuronte 0.1.1 that did the same job.
@@ -75,7 +76,7 @@ and what each cannot do.
 It needs a C compiler and `make`. The check also needs Python 3 with NumPy.
 
 ```sh
-make          # build/libneuronte.so and build/libneuronte.a
+make          # build/libneuronte.so, build/libneuronte.a and build/neuronte-fontfile
 make demo     # draws four lines of text in the terminal
 make test     # checks every shipped file
 ```
@@ -88,6 +89,13 @@ none on a digit, and every advance must be exact. Today every face has 0.
 And it compares every net's pixels, over a fixed list of characters, and
 lines of text drawn by the two scalable faces, with the values recorded in
 `tests/golden.json` when this set was cut.
+
+It then makes the [font files](docs/neuronte-fontfile.md) twice, once
+through `neuronte-setup` and once with another number of threads, and
+checks that the two are the same bytes, that every embedded bitmap is
+what the library draws (no pixel may differ) and that every outline
+follows its net. That part takes a few minutes and writes only under
+`build/`.
 
 ## Use it
 
@@ -133,6 +141,24 @@ A handle keeps the cells it has drawn, so drawing the same character again
 is a copy. Do not share one handle between threads without a lock. The
 [Use section of the 0.1.x README][use] covers colour files, palettes and
 themes, coverage without drawing, and loading weights from memory.
+
+## Font files for other programs
+
+A browser or a GTK or Qt program takes its text from fontconfig and
+FreeType and cannot run a net. `build/neuronte-fontfile` writes what the
+nets draw as five TrueType files, Neuronte Sans in four styles and
+Neuronte Mono, with the nets' own pixels embedded for the small sizes:
+
+```sh
+./build/neuronte-fontfile --weights weights --out ~/.local/share/fonts/neuronte
+```
+
+On a system, `neuronte-setup` makes them at install and at start when they
+are absent or the weights changed, and a fontconfig file makes them the
+last choice for `sans-serif` and `monospace`, after any font that is
+installed. [The page on them](docs/neuronte-fontfile.md) says what the
+files hold, what they lack (kerning, shaping, hinting, a serif face) and
+how each program tried draws them.
 
 ## How it works, briefly
 

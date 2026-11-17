@@ -1,5 +1,33 @@
 # Changes
 
+## Unreleased
+
+- **Font files for programs that cannot run a net.** `neuronte-fontfile`
+  (C11, links only the library and libm) writes what the nets draw as five
+  TrueType files: Neuronte Sans in four styles from the desktop faces (154
+  characters) and Neuronte Mono from the terminal bundles in the weights
+  directory (3,205 characters with the files of 2.3.0). Each holds an
+  outline of every character, traced from the net's coverage, and the nets'
+  own pixels as embedded bitmaps for the small sizes (1 to 32 px for Sans).
+  A file of bitmaps alone is rejected by Debian's fontconfig and Chromium
+  then does not start; outlines alone do not look like the desktop faces
+  below 33 px. Tried in Chromium 156, GTK 3 and 4, Qt 6 and FreeType.
+  No kerning, shaping, hinting or serif face; nothing is read from any
+  font. [docs/neuronte-fontfile.md](docs/neuronte-fontfile.md).
+- **`neuronte-setup`**, run at install and at start, makes those files
+  when they are absent or the weights changed, through a list of steps
+  that others can join (`system/`). A start that finds them current costs
+  14 ms; a first start makes the Sans files before the login screen
+  (1.8 s on a Core i7-6820HQ) and Mono afterwards in the background.
+  `make install-setup` installs it with two systemd units and a fontconfig
+  file that makes the two families the last choice for `sans-serif` and
+  `monospace`, after any font that is installed.
+- `make test` also makes the files twice and checks them: the same bytes
+  each time, every embedded bitmap exactly the library's pixels (15,616
+  Sans glyphs and 1,330 Mono cells, none differs), every outline within
+  65 pixels of its net's 8,192, and 43 checks of the setup command.
+- The library and every weight file are unchanged.
+
 ## 2.3.0
 
 - **1,864 more terminal characters**, 3,205 with `neuronte-split-v9`, in

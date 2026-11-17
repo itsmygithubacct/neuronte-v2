@@ -1,0 +1,147 @@
+#!/bin/sh
+# neuronte-setup: bring what Neuronte keeps on disk up to date.
+#
+#   neuronte-setup [--check] [--force] [--early] [--only STEP[,STEP...]]
+#                  [--list] [--quiet]
+#
+# Runs the steps in the steps directory in the order of their names. Run it
+# when Neuronte is installed or its weights are replaced, and at every start
+# (system/neuronte-setup.service); a step that is current does nothing.
+#
+# A step is an executable that answers two words:
+#   STEP check   exit 0 when what it makes is current, 1 when it is not
+#                (other codes: it could not tell). Writes nothing.
+#   STEP run     make it current. Running it again changes nothing. It
+#                writes each file beside its final name and renames it, and
+#                records what the file was made from (its own version, the
+#                options that change the result, the SHA-256 of each input
+#                and output) in $NEURONTE_STATE/STEP.stamp, last.
+# and reads its settings from the environment:
+#   NEURONTE_WEIGHTS   the directory of weight files
+#   NEURONTE_STATE     where steps keep what they make, and their stamps
+#   NEURONTE_THREADS   how many threads a step may use
+#   NEURONTE_FORCE     1 when the step must make everything again
+#
+#   --check   run nothing: exit 0 when every step is current, 1 otherwise
+#   --force   make everything again
+#   --early   only the steps named by early= in the settings: what must be
+#             there before a login screen starts
+#   --only    only the named steps
+#   --list    print the steps that would be looked at, and stop
+#
+# Exit: 0 when every step looked at is current at the end, 1 when one is not
+# (--check) or failed (the steps after a failed one are still run), 2 for a
+# mistake in the command or the settings.
+#
+# Settings: /etc/neuronte/setup.conf (NEURONTE_SETUP_CONF names another),
+# lines of key=value; system/setup.conf lists them. Steps:
+# /usr/lib/neuronte/setup.d (NEURONTE_SETUP_STEPS names another).
+# MIT licence. See LICENSE.
+set -u
+# What the steps make is for every user to read.
+umask 022
+
+conf=${NEURONTE_SETUP_CONF:-/etc/neuronte/setup.conf}
+steps=${NEURONTE_SETUP_STEPS:-/usr/lib/neuronte/setup.d}
+weights=/usr/share/neuronte/weights
+state=/var/lib/neuronte
+threads=4
+early=20-fontfile-sans
+skip=
+
+say() { [ "$quiet" = 1 ] || echo "neuronte-setup: $*" >&2; }
+fail() { echo "neuronte-setup: $*" >&2; exit 2; }
+
+mode=run force='' only='' all=1 quiet=0 list=0 use_early=0
+while [ $# -gt 0 ]; do
+    case $1 in
+    --check) mode=check ;;
+    --force) force=1 ;;
+    --early) use_early=1 all=0 ;;
+    --only) [ $# -ge 2 ] || fail "--only needs the name of a step"; only=$2 all=0; shift ;;
+    --list) list=1 ;;
+    --quiet) quiet=1 ;;
+    *) sed -n '2,6p' "$0" | cut -c3- >&2; exit 2 ;;
+    esac
+    shift
+done
+
+# The settings are read, never run: a line is a key, an equals sign and a
+# value, or a comment.
+if [ -r "$conf" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+        case $line in
+        '' | '#'*) continue ;;
+        *=*) key=${line%%=*} value=${line#*=} ;;
+        *) fail "$conf: not key=value: $line" ;;
+        esac
+        case $key in
+        weights) weights=$value ;;
+        state) state=$value ;;
+        threads) threads=$value ;;
+        early) early=$value ;;
+        skip) skip=$value ;;
+        *) say "$conf: unknown key $key (ignored)" ;;
+        esac
+    done < "$conf"
+fi
+case $threads in
+'' | *[!0-9]* | 0) fail "$conf: threads must be a number from 1 up" ;;
+esac
+[ "$use_early" = 1 ] && only=$early
+
+listed() { case ",$1," in *",$2,"*) return 0 ;; esac; return 1; }
+
+export NEURONTE_WEIGHTS="$weights" NEURONTE_STATE="$state" NEURONTE_THREADS="$threads"
+export NEURONTE_FORCE="${force:+1}"
+
+if [ "$mode" = run ] && [ "$list" = 0 ]; then
+    mkdir -p "$state" || fail "$state: cannot be made"
+    # One run at a time: the installer and the start-up unit may meet.
+    if command -v flock > /dev/null 2>&1; then
+        exec 9> "$state/setup.lock" || fail "$state/setup.lock: cannot be written"
+        flock 9
+    fi
+fi
+
+bad=0 seen=0
+for step in "$steps"/*; do
+    name=${step##*/}
+    if [ ! -f "$step" ] || [ ! -x "$step" ]; then continue; fi
+    case $name in *.conf | *.md | *~ | .*) continue ;; esac
+    [ "$all" = 1 ] || listed "$only" "$name" || continue
+    if listed "$skip" "$name"; then
+        say "$name: skipped by the settings"
+        continue
+    fi
+    seen=$((seen + 1))
+    if [ "$list" = 1 ]; then
+        echo "$name"
+        continue
+    fi
+    if [ -z "$force" ] || [ "$mode" = check ]; then
+        "$step" check 9>&-
+        rc=$?
+        if [ "$mode" = check ]; then
+            if [ $rc -eq 0 ]; then say "$name: current"; else say "$name: not current"; bad=1; fi
+            continue
+        fi
+        if [ $rc -eq 0 ]; then
+            say "$name: current"
+            continue
+        fi
+    fi
+    # The lock is this command's alone: a step, and anything a step leaves
+    # running, does not hold it.
+    if "$step" run 9>&-; then
+        say "$name: made"
+    else
+        say "$name: FAILED (exit $?)"
+        bad=1
+    fi
+done
+if [ "$seen" = 0 ] && [ "$all" = 0 ]; then
+    say "no step named $only in $steps"
+    exit 1
+fi
+exit $bad

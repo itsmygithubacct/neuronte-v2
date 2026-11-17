@@ -1,0 +1,19 @@
+#!/bin/sh
+# A step of neuronte-setup: the four Neuronte Sans font files, for programs
+# that take their text from fontconfig. neuronte-fontfile makes them from
+# the desktop nets alone; no GPU and no other step's result is used. This
+# is the step that must be done before a login screen starts: a program that
+# finds no font at all may not start (docs/neuronte-fontfile.md).
+set -u
+step=20-fontfile-sans
+word=${1-}
+set -- --weights "${NEURONTE_WEIGHTS:?}" --out "${NEURONTE_STATE:?}/fonts" \
+    --stamp "$NEURONTE_STATE/$step.stamp" --faces regular,bold,italic,bolditalic
+case $word in
+check) exec "${NEURONTE_FONTFILE:-neuronte-fontfile}" "$@" --check ;;
+# fc-cache sleeps two seconds after it has written a cache. A login screen
+# should not wait for that, so it is started and left to finish.
+run) exec "${NEURONTE_FONTFILE:-neuronte-fontfile}" "$@" --threads "${NEURONTE_THREADS:-4}" \
+    --fc-cache-nowait ${NEURONTE_FORCE:+--force} ;;
+*) echo "usage: $step check|run" >&2; exit 2 ;;
+esac

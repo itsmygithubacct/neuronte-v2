@@ -1,0 +1,18 @@
+# Every step of Neuronte's setup, after the early ones and without holding
+# the start of the machine back: Type=exec, so nothing waits for it to end.
+[Unit]
+Description=Neuronte setup (font files and caches made from the weights)
+Documentation=file:///usr/share/doc/neuronte/neuronte-fontfile.md
+RequiresMountsFor=/var/lib/neuronte /var/cache/fontconfig
+Wants=neuronte-setup-early.service
+After=neuronte-setup-early.service local-fs.target
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/neuronte-setup
+StateDirectory=neuronte
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

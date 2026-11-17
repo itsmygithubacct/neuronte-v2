@@ -1,0 +1,20 @@
+# The part of Neuronte's setup that a login screen cannot start without:
+# the Sans font files, when they are absent or the weights changed. When
+# they are current this is one check and takes a few milliseconds. Only
+# the display manager is made to wait; a text or remote login is not.
+[Unit]
+Description=Neuronte setup, early steps (font files a login screen needs)
+Documentation=file:///usr/share/doc/neuronte/neuronte-fontfile.md
+RequiresMountsFor=/var/lib/neuronte /var/cache/fontconfig
+After=local-fs.target
+Before=display-manager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/neuronte-setup --early
+StateDirectory=neuronte
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target
