@@ -139,9 +139,17 @@ sed '2s/trace=[0-9]*/trace=48/' "$t/stamp.keep" > "$stamp"
 expect 1 "--check with a stamp of another option" $setup --early --check
 cp -p "$t/stamp.keep" "$stamp"
 expect 0 "--check with the stamp put back" $setup --early --check
-for f in "$root"/weights/*.nrt; do ln -s "$f" "$t/weights/"; done
-ln -s "$root/weights/neuronte-term-math-v1.nrt" "$t/weights/neuronte-term-zz-added-v1.nrt"
+for f in "$root"/weights/*.nrt "$root"/weights/*.symbols.txt; do
+    [ ! -e "$f" ] || ln -s "$f" "$t/weights/"
+done
 printf 'weights=%s\nstate=%s\nthreads=%s\n' "$t/weights" "$state" "$threads" > "$t/more.conf"
+# A bundle drawn for another box than one cell says so with a card,
+# NAME.symbols.txt, and no glyph of a font file is made from it.
+ln -s "$root/weights/neuronte-term-math-v1.nrt" "$t/weights/neuronte-kilix-zz-two-v1.nrt"
+: > "$t/weights/neuronte-kilix-zz-two-v1.symbols.txt"
+expect 0 "Mono with one more bundle that is not for one cell" \
+    env NEURONTE_SETUP_CONF="$t/more.conf" $setup --only 25-fontfile-mono --check
+ln -s "$root/weights/neuronte-term-math-v1.nrt" "$t/weights/neuronte-term-zz-added-v1.nrt"
 expect 0 "the Sans files with one more bundle in the weights directory" \
     env NEURONTE_SETUP_CONF="$t/more.conf" $setup --early --check
 expect 1 "Mono with one more bundle in the weights directory" \
@@ -271,10 +279,16 @@ is "a bundle trained on none of the characters has none" ! -e "$cs/cells/neuront
 : > "$cs/cells/neuronte-split-v9.cells.999.tmp" # what a killed run leaves
 conf 'cells=9x18' 'cells.neuronte-emoji-v1=9x18' 'cells_chars.neuronte-emoji-v1=all'
 expect 0 "a run after the settings for single bundles are gone" $cells
+# What is left is what the stamp says was made, whatever bundles the
+# weights directory holds: no file more and none fewer.
 left=$(find "$cs/cells" -type f | sort | sed 's|.*/||' | tr '\n' ' ')
-# The symbol bundle is trained on one character of Latin-1.
-is "what nobody asks for is gone, and a colour net has no cells file" \
-    "$left" = "neuronte-split-v9.cells neuronte-term-symbol-v1.cells "
+made=$(sed -n 's/^bundle \([^ ]*\) .* entries [1-9][0-9]* file .*/\1.cells/p' "$cs/30-cells.stamp" | sort | tr '\n' ' ')
+is "the cells directory holds the files the stamp names and no other" "$left" = "$made"
+is "the split bundle's file is among them" -s "$split"
+is "the file of a bundle that lost its own characters is gone" ! -e "$cs/cells/neuronte-term-dingbat-v1.cells"
+is "the file of a weight file the settings no longer name is gone" ! -e "$cs/cells/neuronte-ui14-v1.cells"
+is "a colour net has no cells file" ! -e "$cs/cells/neuronte-emoji-v1.cells"
+is "what a killed run left is gone" "$(find "$cs/cells" -name '*.tmp' | wc -l)" = 0
 expect 0 "--verify of what is left" $tool --verify --threads "$threads"
 find "$cs" ! -name setup.lock -exec stat -c '%n %i %s %y' {} + | sort > "$t/before.txt"
 expect 0 "the cells step when current" $cells

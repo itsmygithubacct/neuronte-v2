@@ -528,6 +528,12 @@ def sha(path):
         return hashlib.sha256(fh.read()).hexdigest()
 
 
+def one_cell(name):
+    """False for a bundle with a card NAME.symbols.txt: its drawings are for
+    two cells or for halves, and no glyph of a font file is made from it."""
+    return not os.path.exists(os.path.join(WEIGHTS, name[:-4] + ".symbols.txt"))
+
+
 def stamp(folder, names):
     """The stamps beside FOLDER's files: one in it, or the steps' in the
     directory above it (STATE/NAME.stamp for STATE/fonts)."""
@@ -555,7 +561,8 @@ def stamp(folder, names):
                 fail(f"the stamp's SHA-256 or size of {m.group(5)} is not the file's")
             (weights if m.group(1) == "weight" else outputs)[m.group(5)] = m.group(2)
     expected = {n for n in os.listdir(WEIGHTS)
-                if re.fullmatch(r"neuronte-(ui\d+(-italic)?-v\d+|term-.*|kilix-.*)\.nrt", n)}
+                if re.fullmatch(r"neuronte-ui\d+(-italic)?-v\d+\.nrt", n)
+                or (re.fullmatch(r"neuronte-(term|kilix)-.*\.nrt", n) and one_cell(n))}
     expected |= {newest(p) for p in ("neuronte-split-v", "neuronte-ui-scaled-latin1-v",
                                      "neuronte-ui-scaled-latin1-italic-advances-v", "neuronte-ui-large-latin1-v")}
     if set(weights) != expected:
@@ -606,8 +613,12 @@ def main():
             if f.advance[f.cmap[c]] != want:
                 fail(f"{name}: U+{c:04X} advances {f.advance[f.cmap[c]]}, the net's table says {want}")
                 break
-    bundles = [newest("neuronte-split-v")] + sorted(n for n in os.listdir(WEIGHTS)
-                                                    if re.fullmatch(r"neuronte-(term|kilix)-.*\.nrt", n))
+    # Text first, then a terminal's own symbols; never a bundle drawn for
+    # another box than one cell.
+    bundles = [newest("neuronte-split-v")]
+    for kind in ("term", "kilix"):
+        bundles += sorted(n for n in os.listdir(WEIGHTS)
+                          if re.fullmatch(rf"neuronte-{kind}-.*\.nrt", n) and one_cell(n))
     source, bundle_handles = {}, []
     for name in bundles:
         h = open_file(lib, os.path.join(WEIGHTS, name))

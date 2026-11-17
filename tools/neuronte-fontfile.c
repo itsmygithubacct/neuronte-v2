@@ -1319,6 +1319,18 @@ typedef struct {
 
 /* The weight files the wanted faces are made from. The Sans files take
  * only their mark for a missing character from the terminal bundle. */
+/* 0 for a bundle whose drawings are made for another box than one cell
+ * (two cells, or a glyph in two halves). Such a file says so with a card,
+ * NAME.symbols.txt, beside it, where a bundle of one-cell characters has
+ * NAME.list.txt or none. A glyph of a font file is one cell, so it is
+ * left out. */
+static int one_cell(const listing *l, const char *name)
+{
+    char card[MAX_PATH_LEN + 160];
+    snprintf(card, sizeof card, "%s/%.*s.symbols.txt", l->dir, (int)(strlen(name) - 4), name);
+    return access(card, F_OK) != 0;
+}
+
 static void open_sources(sources *src, weights *ws, const listing *l, int sans, int mono)
 {
     char prefix[64];
@@ -1339,12 +1351,16 @@ static void open_sources(sources *src, weights *ws, const listing *l, int sans, 
         name = newest(l, "neuronte-ui-large-latin1-v");
         src->large = use(ws, l, name ? name : newest(l, "neuronte-ui-large-v"));
     }
-    /* The terminal's own order: the newest split bundle, then every term
-     * and kilix bundle by name. A character goes to the first trained on it. */
+    /* The newest split bundle, then every term bundle by name, then every
+     * kilix bundle by name: text first, a terminal's own symbols after it.
+     * A character goes to the first trained on it. */
     if ((name = newest(l, "neuronte-split-v")) != NULL)
         src->term[src->terms++] = use(ws, l, name);
     for (i = 0; mono && i < l->count && src->terms < MAX_TERMS; i++)
-        if (!strncmp(l->names[i], "neuronte-term-", 14) || !strncmp(l->names[i], "neuronte-kilix-", 15))
+        if (!strncmp(l->names[i], "neuronte-term-", 14) && one_cell(l, l->names[i]))
+            src->term[src->terms++] = use(ws, l, l->names[i]);
+    for (i = 0; mono && i < l->count && src->terms < MAX_TERMS; i++)
+        if (!strncmp(l->names[i], "neuronte-kilix-", 15) && one_cell(l, l->names[i]))
             src->term[src->terms++] = use(ws, l, l->names[i]);
 }
 
