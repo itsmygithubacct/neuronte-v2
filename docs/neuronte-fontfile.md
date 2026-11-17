@@ -259,13 +259,46 @@ words:
   `$NEURONTE_STATE/STEP.stamp`, last.
 
 A step reads `NEURONTE_WEIGHTS`, `NEURONTE_STATE`, `NEURONTE_THREADS` and
-`NEURONTE_FORCE` from the environment. The command takes them from
+`NEURONTE_FORCE` from the environment, and `NEURONTE_SETUP_SCOPE`
+(`system` or `user`). The command takes them from
 `/etc/neuronte/setup.conf` (lines of `key=value`, read and never run;
 `system/setup.conf` shows every key). `neuronte-setup --check` exits 1
 when any step is not current; a run exits 1 when any step failed, after
 running the rest. `--early` runs only the steps the settings name as
-needed before a login screen starts, `--only A,B` the named ones, `--force`
+needed before a login screen starts (`early=`, as shipped `10-backend`,
+which belongs to another part and is skipped where it is not installed,
+and `20-fontfile-sans`), `--only A,B` the named ones, `--force`
 makes everything again.
+
+**At a start.** The early unit sets `NEURONTE_SETUP_BOOT=1`: a login
+screen is waiting. Under it a step's `run` must return within
+`boot_limit` seconds (60 unless the settings say otherwise) or it is
+stopped and counted as failed. A step whose work may take longer (a
+measurement, a compiler) does not do it then: it leaves something safe
+for programs to find, writes no stamp, and exits 75, which the command
+reports as deferred and does not count as a failure. The work is done by
+the next run without `NEURONTE_SETUP_BOOT`, which
+`neuronte-setup.service` starts after the login screen at low priority.
+That run writes the stamp; its messages are that unit's journal and its
+exit status is the unit's; until it has finished, `neuronte-setup
+--check` says the step is not current. Outside a start, exit 75 is a
+failure like any other. The font steps do not defer: the Sans step does
+its whole work inside the limit (the times are below) and the Mono step
+is not an early step.
+
+**For each user.** `neuronte-setup --user` is the same command over the
+steps in `/usr/lib/neuronte/user-setup.d`, with the state in
+`$XDG_STATE_HOME/neuronte` (readable by that user only) and the user's
+own `$XDG_CONFIG_HOME/neuronte/setup.conf` read over the system's
+settings. A step there also gets `NEURONTE_SYSTEM_STATE`, the system's
+state directory, to read and never to write. It is for what must be
+made as the user who will use it, such as a driver's cache that only
+its owner may write. The user's steps have a directory of their own,
+and not a mark inside each step, so that a step still answers only two
+words, a listing of a directory shows what runs as whom, and a step
+written for the system cannot be run as a user by accident; a step
+meant for both is put in both. No user step is shipped here: the font
+files are the same for every user and are made once by the system.
 
 Two steps are here, and others can be added beside them without
 changing the command:
@@ -286,28 +319,33 @@ sudo make install-setup            # PREFIX=/usr SYSCONFDIR=/etc UNITDIR=/usr/li
 sudoedit /etc/neuronte/setup.conf  # weights=/where/the/.nrt/files/are
 sudo neuronte-setup                # makes the files now: 6 to 8 s on the machine timed below
 sudo systemctl enable neuronte-setup-early.service neuronte-setup.service
+sudo systemctl --global enable neuronte-setup-user.service   # when there are user steps
 ```
 
 `install-setup` puts `neuronte-fontfile` and `neuronte-setup` in
 `/usr/bin`, the two steps in `/usr/lib/neuronte/setup.d`, the settings in
 `/etc/neuronte/setup.conf` (kept when one is there), the fontconfig file
-in `/etc/fonts/conf.d`, the two units, and this page. It does not install
+in `/etc/fonts/conf.d`, the two system units and the user unit, and this
+page. It does not install
 the weights or the library: the settings say where the weights are. An
 image build runs the same `neuronte-setup` in the image, so the first
 start of the machine finds the files made.
 
-### The units, and why they are system units
+### The units, and why the system makes the fonts
 
 - `neuronte-setup-early.service`: `neuronte-setup --early`, ordered
   before `display-manager.service`. A text or remote login does not wait
   for it. It gives up after two minutes.
-- `neuronte-setup.service`: `neuronte-setup`, after the early one, with
-  `Type=exec` so that nothing waits for it to finish, at low priority.
+- `neuronte-setup.service`: `neuronte-setup`, after the early one and
+  after the display manager has started, with `Type=exec` so that nothing
+  waits for it to finish, at low priority.
+- `neuronte-setup-user.service`, a user unit: `neuronte-setup --user` at
+  login, at the lowest priority; nothing waits for it.
 
-They are system units, not user units: the login screen runs as its own
-user before any user has a session and must find a font too, the files
-are the same for everyone, and one copy in `/var/lib/neuronte/fonts`
-serves all. A user unit would make the files once for each user and too
+The font steps are run by the system units, not the user unit: the
+login screen runs as its own user before any user has a session and must
+find a font too, the files are the same for everyone, and one copy in
+`/var/lib/neuronte/fonts` serves all. A user unit would make the files once for each user and too
 late for the login screen.
 
 ### What a start costs
@@ -396,13 +434,15 @@ Neuronte Mono at the cell sizes of the terminal's font sizes from 7 to
 
 `make test` runs, after the library's own checks:
 
-- `tests/check_setup.sh`: 43 checks of `neuronte-setup` and the two
+- `tests/check_setup.sh`: 67 checks of `neuronte-setup` and the two
   steps in a directory of its own: nothing made, `--early`, the rest, a
   run when current changes no file, time or directory entry; a touched
   file is current, a changed or removed one is made again as it was; a
   stamp of another version or option, or one more bundle in the weights
   directory, is not current; a failing step gives exit 1 and the later
-  steps still run.
+  steps still run; at a start a step may defer and a step that overruns
+  is stopped; `--user` keeps its state apart and touches nothing of the
+  system's.
 - `tests/check_fontfile.py`: reads the files with a reader of its own
   written from the specification (directory, checksums, `cmap`, `glyf`,
   `hmtx`, `EBLC`, `EBDT`), then: the characters are exactly the nets'; the

@@ -57,8 +57,10 @@ test: all build/test_utf8 build/test_api
 PREFIX ?= /usr
 SYSCONFDIR ?= /etc
 UNITDIR ?= /usr/lib/systemd/system
+USERUNITDIR ?= /usr/lib/systemd/user
 install-setup: build/neuronte-fontfile
 	install -d $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(PREFIX)/lib/neuronte/setup.d \
+		$(DESTDIR)$(PREFIX)/lib/neuronte/user-setup.d $(DESTDIR)$(USERUNITDIR) \
 		$(DESTDIR)$(SYSCONFDIR)/neuronte $(DESTDIR)$(SYSCONFDIR)/fonts/conf.d \
 		$(DESTDIR)$(UNITDIR) $(DESTDIR)$(PREFIX)/share/doc/neuronte
 	install -m 755 build/neuronte-fontfile system/neuronte-setup $(DESTDIR)$(PREFIX)/bin/
@@ -68,6 +70,7 @@ install-setup: build/neuronte-fontfile
 		install -m 644 system/setup.conf $(DESTDIR)$(SYSCONFDIR)/neuronte/setup.conf
 	install -m 644 system/66-neuronte.conf $(DESTDIR)$(SYSCONFDIR)/fonts/conf.d/
 	install -m 644 system/neuronte-setup-early.service system/neuronte-setup.service $(DESTDIR)$(UNITDIR)/
+	install -m 644 system/neuronte-setup-user.service $(DESTDIR)$(USERUNITDIR)/
 	install -m 644 docs/neuronte-fontfile.md docs/neuronte-fontfile-chromium.png docs/neuronte-fontfile-fallback.png \
 		$(DESTDIR)$(PREFIX)/share/doc/neuronte/
 

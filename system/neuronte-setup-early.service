@@ -12,6 +12,8 @@ Before=display-manager.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+# A step may not hold the start back: see the top of neuronte-setup.
+Environment=NEURONTE_SETUP_BOOT=1
 ExecStart=/usr/bin/neuronte-setup --early
 StateDirectory=neuronte
 TimeoutStartSec=120

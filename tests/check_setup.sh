@@ -16,6 +16,14 @@
 #    directory with one more bundle in it is not current.
 # 6. A step that fails gives exit 1 and the steps after it are still run;
 #    a step named by skip= is not run; --only with no such step is exit 1.
+# 7. At a start (NEURONTE_SETUP_BOOT=1) a step that exits 75 is deferred,
+#    not failed, and stays not current until a run without it does the
+#    work; a step that takes longer than boot_limit is stopped and counted
+#    as failed; outside a start, exit 75 is a failure.
+# 8. --user runs the user's steps directory with the state under
+#    $XDG_STATE_HOME/neuronte, readable by that user only, tells the step
+#    its scope and the system's state directory, reads the user's own
+#    settings over the system's, and refuses --early.
 # It leaves BUILD_DIR/setup-test/state/fonts for tests/check_fontfile.py.
 set -u
 build=${1:?usage: check_setup.sh BUILD_DIR [THREADS]}
@@ -137,11 +145,78 @@ printf 'weights=%s\nstate=%s\nthreads=%s\nskip=10-fails\n' "$root/weights" "$sta
 expect 0 "a run with the failing step skipped" \
     env NEURONTE_SETUP_STEPS="$t/steps" NEURONTE_SETUP_CONF="$t/skip.conf" $setup
 expect 1 "--only with no such step" $setup --only 99-nothing
+expect 0 "--early when a step it names is not installed" sh "$root/system/neuronte-setup" --early
+is "the step that is not installed is said once" "$(grep -c '10-backend: not installed, skipped' "$t/out.txt")" = 1
 expect 2 "an unknown option" $setup --nonsense
 printf 'weights=%s\nthreads=many\n' "$root/weights" > "$t/bad.conf"
 expect 2 "settings with a bad value" env NEURONTE_SETUP_CONF="$t/bad.conf" $setup --check
 snapshot > "$t/after.txt"
 is "none of that changed a file" "$(sha "$t/before.txt")" = "$(sha "$t/after.txt")"
+
+# 7
+mkdir -p "$t/boot-steps"
+cat > "$t/boot-steps/10-defers" << 'STEP'
+#!/bin/sh
+# Stands in for a step whose work is too long for a start.
+case $1 in
+check) [ -e "$NEURONTE_STATE/10-defers.stamp" ] ;;
+run)
+    if [ "${NEURONTE_SETUP_BOOT:-}" = 1 ]; then
+        echo pending > "$NEURONTE_STATE/choice"
+        exit 75
+    fi
+    echo measured > "$NEURONTE_STATE/choice"
+    echo done > "$NEURONTE_STATE/10-defers.stamp"
+    ;;
+esac
+STEP
+printf '#!/bin/sh\n[ "$1" = check ] && exit 1\nsleep 20\n' > "$t/boot-steps/20-slow"
+chmod +x "$t/boot-steps/10-defers" "$t/boot-steps/20-slow"
+printf 'weights=%s\nstate=%s\nboot_limit=1\n' "$root/weights" "$t/boot-state" > "$t/boot.conf"
+boot="env NEURONTE_SETUP_STEPS=$t/boot-steps NEURONTE_SETUP_CONF=$t/boot.conf"
+expect 0 "a deferring step at a start" $boot NEURONTE_SETUP_BOOT=1 sh "$root/system/neuronte-setup" --only 10-defers
+is "it is reported as deferred" "$(grep -c '10-defers: deferred' "$t/out.txt")" = 1
+is "it left something safe" "$(cat "$t/boot-state/choice")" = pending
+expect 1 "--check after a deferral" $boot $setup --only 10-defers --check
+before=$(date +%s)
+expect 1 "a step longer than boot_limit at a start" $boot NEURONTE_SETUP_BOOT=1 sh "$root/system/neuronte-setup" --only 20-slow
+is "it was stopped, not waited for" $(($(date +%s) - before)) -lt 10
+is "it is reported as stopped" "$(grep -c '20-slow: FAILED (stopped' "$t/out.txt")" = 1
+expect 0 "the run after the start does the deferred work" $boot $setup --only 10-defers
+is "the deferred work was done" "$(cat "$t/boot-state/choice")" = measured
+expect 0 "--check after it" $boot $setup --only 10-defers --check
+printf '#!/bin/sh\n[ "$1" = check ] && exit 1\nexit 75\n' > "$t/boot-steps/30-always75"
+chmod +x "$t/boot-steps/30-always75"
+expect 1 "exit 75 outside a start" $boot $setup --only 30-always75
+expect 0 "exit 75 at a start" $boot NEURONTE_SETUP_BOOT=1 $setup --only 30-always75
+
+# 8
+mkdir -p "$t/user-steps" "$t/home/.config/neuronte"
+cat > "$t/user-steps/40-user-warm" << 'STEP'
+#!/bin/sh
+case $1 in
+check) [ -e "$NEURONTE_STATE/40-user-warm.stamp" ] ;;
+run) echo "$NEURONTE_SETUP_SCOPE $NEURONTE_SYSTEM_STATE $NEURONTE_THREADS $NEURONTE_WEIGHTS" \
+    > "$NEURONTE_STATE/40-user-warm.stamp" ;;
+esac
+STEP
+chmod +x "$t/user-steps/40-user-warm"
+echo 'threads=1' > "$t/home/.config/neuronte/setup.conf"
+user="env HOME=$t/home XDG_STATE_HOME=$t/xdg-state XDG_CONFIG_HOME=$t/home/.config NEURONTE_SETUP_USER_STEPS=$t/user-steps"
+snapshot > "$t/before.txt"
+expect 1 "--user --check with nothing made" $user $setup --user --check
+expect 0 "--user" $user $setup --user
+is "the user's step was told its scope, the system's state, the user's threads and the weights" \
+    "$(cat "$t/xdg-state/neuronte/40-user-warm.stamp")" = "user $state 1 $root/weights"
+is "the user's state is the user's alone" "$(stat -c %a "$t/xdg-state/neuronte")" = 700
+expect 0 "--user --check after it" $user $setup --user --check
+expect 2 "--user --early" $user $setup --user --early
+expect 0 "--user with no steps directory" env HOME="$t/home" XDG_STATE_HOME="$t/xdg-state2" \
+    NEURONTE_SETUP_USER_STEPS="$t/no-such-directory" $setup --user
+expect 0 "the system's steps are not the user's" $user $setup --user --list
+is "only the user's step is listed" "$(cat "$t/out.txt")" = 40-user-warm
+snapshot > "$t/after.txt"
+is "a user's run changed nothing of the system's" "$(sha "$t/before.txt")" = "$(sha "$t/after.txt")"
 
 if [ "$fails" != 0 ]; then
     echo "check_setup: $fails of $checks checks failed"

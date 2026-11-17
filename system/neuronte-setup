@@ -1,12 +1,14 @@
 #!/bin/sh
 # neuronte-setup: bring what Neuronte keeps on disk up to date.
 #
-#   neuronte-setup [--check] [--force] [--early] [--only STEP[,STEP...]]
-#                  [--list] [--quiet]
+#   neuronte-setup [--user] [--check] [--force] [--early]
+#                  [--only STEP[,STEP...]] [--list] [--quiet]
 #
 # Runs the steps in the steps directory in the order of their names. Run it
 # when Neuronte is installed or its weights are replaced, and at every start
 # (system/neuronte-setup.service); a step that is current does nothing.
+# With --user it runs the steps that must be done as each user, when that
+# user logs in (system/neuronte-setup-user.service).
 #
 # A step is an executable that answers two words:
 #   STEP check   exit 0 when what it makes is current, 1 when it is not
@@ -21,7 +23,24 @@
 #   NEURONTE_STATE     where steps keep what they make, and their stamps
 #   NEURONTE_THREADS   how many threads a step may use
 #   NEURONTE_FORCE     1 when the step must make everything again
+#   NEURONTE_SETUP_CONF    the settings file, for a step with keys of its own
+#   NEURONTE_SETUP_SCOPE   system, or user under --user
+#   NEURONTE_SYSTEM_STATE  under --user, the system's state directory, to
+#                      read what the system steps made; never to write
+#   NEURONTE_SETUP_BOOT    1 when the machine is starting and a login screen
+#                      is waiting for this run (set by the early unit)
 #
+# Under NEURONTE_SETUP_BOOT=1 a step's run must return within boot_limit
+# seconds (settings; 60 when absent) or it is stopped and counted as failed.
+# A step whose work may take longer does not do it then. It leaves
+# something safe for programs to find, writes no stamp, and exits 75:
+# "deferred". That is not a failure. The work is done by the next run
+# without NEURONTE_SETUP_BOOT, which system/neuronte-setup.service starts
+# after the login screen, at low priority: that run writes the stamp, its
+# messages go to that unit's journal, and its exit status is the unit's.
+# Outside a start, exit 75 is a failure like any other.
+#
+#   --user    the user's steps, with the state in $XDG_STATE_HOME/neuronte
 #   --check   run nothing: exit 0 when every step is current, 1 otherwise
 #   --force   make everything again
 #   --early   only the steps named by early= in the settings: what must be
@@ -36,44 +55,49 @@
 # Settings: /etc/neuronte/setup.conf (NEURONTE_SETUP_CONF names another),
 # lines of key=value; system/setup.conf lists them. Steps:
 # /usr/lib/neuronte/setup.d (NEURONTE_SETUP_STEPS names another).
+# With --user: the same settings, then $XDG_CONFIG_HOME/neuronte/setup.conf
+# over them if the user has one (its state= is the user's state directory);
+# steps in /usr/lib/neuronte/user-setup.d (NEURONTE_SETUP_USER_STEPS names
+# another). A step that is to run in both scopes is in both directories.
 # MIT licence. See LICENSE.
 set -u
-# What the steps make is for every user to read.
-umask 022
 
 conf=${NEURONTE_SETUP_CONF:-/etc/neuronte/setup.conf}
 steps=${NEURONTE_SETUP_STEPS:-/usr/lib/neuronte/setup.d}
 weights=/usr/share/neuronte/weights
 state=/var/lib/neuronte
 threads=4
-early=20-fontfile-sans
+early=10-backend,20-fontfile-sans
 skip=
+boot_limit=60
 
 say() { [ "$quiet" = 1 ] || echo "neuronte-setup: $*" >&2; }
 fail() { echo "neuronte-setup: $*" >&2; exit 2; }
 
-mode=run force='' only='' all=1 quiet=0 list=0 use_early=0
+mode=run force='' only='' all=1 quiet=0 list=0 use_early=0 scope=system
 while [ $# -gt 0 ]; do
     case $1 in
+    --user) scope=user ;;
     --check) mode=check ;;
     --force) force=1 ;;
     --early) use_early=1 all=0 ;;
     --only) [ $# -ge 2 ] || fail "--only needs the name of a step"; only=$2 all=0; shift ;;
     --list) list=1 ;;
     --quiet) quiet=1 ;;
-    *) sed -n '2,6p' "$0" | cut -c3- >&2; exit 2 ;;
+    *) sed -n '2,10p' "$0" | cut -c3- >&2; exit 2 ;;
     esac
     shift
 done
 
 # The settings are read, never run: a line is a key, an equals sign and a
 # value, or a comment.
-if [ -r "$conf" ]; then
+settings() {
+    [ -r "$1" ] || return 0
     while IFS= read -r line || [ -n "$line" ]; do
         case $line in
         '' | '#'*) continue ;;
         *=*) key=${line%%=*} value=${line#*=} ;;
-        *) fail "$conf: not key=value: $line" ;;
+        *) fail "$1: not key=value: $line" ;;
         esac
         case $key in
         weights) weights=$value ;;
@@ -81,19 +105,42 @@ if [ -r "$conf" ]; then
         threads) threads=$value ;;
         early) early=$value ;;
         skip) skip=$value ;;
-        *) say "$conf: unknown key $key (ignored)" ;;
+        boot_limit) boot_limit=$value ;;
+        *) ;; # a step's own setting: the step reads it from this file
         esac
-    done < "$conf"
+    done < "$1"
+}
+settings "$conf"
+if [ "$scope" = user ]; then
+    [ "$use_early" = 0 ] || fail "--early is for the system's steps: nothing a user's step makes holds a login back"
+    # The system's state is what the system steps made. A user's steps keep
+    # their own, and what a user makes is that user's to read.
+    system_state=$state
+    state=${XDG_STATE_HOME:-${HOME:?}/.local/state}/neuronte
+    steps=${NEURONTE_SETUP_USER_STEPS:-/usr/lib/neuronte/user-setup.d}
+    conf=${XDG_CONFIG_HOME:-$HOME/.config}/neuronte/setup.conf
+    settings "$conf"
+    export NEURONTE_SYSTEM_STATE="$system_state"
+    umask 077
+else
+    # What the system steps make is for every user to read.
+    umask 022
 fi
 case $threads in
 '' | *[!0-9]* | 0) fail "$conf: threads must be a number from 1 up" ;;
 esac
+case $boot_limit in
+'' | *[!0-9]* | 0) fail "$conf: boot_limit must be a number of seconds from 1 up" ;;
+esac
 [ "$use_early" = 1 ] && only=$early
+boot=${NEURONTE_SETUP_BOOT:-}
+[ "$boot" = 1 ] || boot=''
 
 listed() { case ",$1," in *",$2,"*) return 0 ;; esac; return 1; }
 
 export NEURONTE_WEIGHTS="$weights" NEURONTE_STATE="$state" NEURONTE_THREADS="$threads"
-export NEURONTE_FORCE="${force:+1}"
+export NEURONTE_FORCE="${force:+1}" NEURONTE_SETUP_SCOPE="$scope" NEURONTE_SETUP_BOOT="${boot:+1}"
+export NEURONTE_SETUP_CONF="$conf"
 
 if [ "$mode" = run ] && [ "$list" = 0 ]; then
     mkdir -p "$state" || fail "$state: cannot be made"
@@ -133,15 +180,36 @@ for step in "$steps"/*; do
     fi
     # The lock is this command's alone: a step, and anything a step leaves
     # running, does not hold it.
-    if "$step" run 9>&-; then
-        say "$name: made"
+    if [ -n "$boot" ] && command -v timeout > /dev/null 2>&1; then
+        timeout "$boot_limit" "$step" run 9>&-
     else
-        say "$name: FAILED (exit $?)"
+        "$step" run 9>&-
+    fi
+    rc=$?
+    if [ $rc -eq 0 ]; then
+        say "$name: made"
+    elif [ $rc -eq 75 ] && [ -n "$boot" ]; then
+        say "$name: deferred to the run after the start"
+    elif [ $rc -eq 124 ] && [ -n "$boot" ]; then
+        say "$name: FAILED (stopped: longer than the $boot_limit s a step has at a start)"
+        bad=1
+    else
+        say "$name: FAILED (exit $rc)"
         bad=1
     fi
 done
-if [ "$seen" = 0 ] && [ "$all" = 0 ]; then
-    say "no step named $only in $steps"
-    exit 1
+if [ "$all" = 0 ] && [ "$list" = 0 ]; then
+    # A named step that is not installed is said once and is no failure:
+    # the settings may name a step of a part that is not on this machine.
+    rest=$only
+    while [ -n "$rest" ]; do
+        name=${rest%%,*}
+        case $rest in *,*) rest=${rest#*,} ;; *) rest='' ;; esac
+        [ -z "$name" ] || [ -x "$steps/$name" ] || say "$name: not installed, skipped"
+    done
+    # Asked for by name on the command line, and none of them is there.
+    if [ "$seen" = 0 ] && [ "$use_early" = 0 ]; then
+        exit 1
+    fi
 fi
 exit $bad

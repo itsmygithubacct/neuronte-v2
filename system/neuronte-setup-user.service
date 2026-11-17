@@ -1,0 +1,15 @@
+# The steps of Neuronte's setup that must be done as each user (a cache
+# only that user may write, for one), when the user logs in. Nothing waits
+# for it. Enable for every user: systemctl --global enable neuronte-setup-user.service
+[Unit]
+Description=Neuronte setup, this user's steps
+Documentation=file:///usr/share/doc/neuronte/neuronte-fontfile.md
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/neuronte-setup --user
+Nice=19
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

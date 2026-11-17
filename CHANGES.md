@@ -19,13 +19,15 @@
   that others can join (`system/`). A start that finds them current costs
   14 ms; a first start makes the Sans files before the login screen
   (1.8 s on a Core i7-6820HQ) and Mono afterwards in the background.
-  `make install-setup` installs it with two systemd units and a fontconfig
+  `make install-setup` installs it with its systemd units and a fontconfig
   file that makes the two families the last choice for `sans-serif` and
-  `monospace`, after any font that is installed.
+  `monospace`, after any font that is installed. A step may defer long
+  work at a start to the run after the login screen, and `neuronte-setup
+  --user` runs steps that must be done as each user.
 - `make test` also makes the files twice and checks them: the same bytes
   each time, every embedded bitmap exactly the library's pixels (15,616
   Sans glyphs and 1,330 Mono cells, none differs), every outline within
-  65 pixels of its net's 8,192, and 43 checks of the setup command.
+  65 pixels of its net's 8,192, and 67 checks of the setup command.
 - The library and every weight file are unchanged.
 
 ## 2.3.0
