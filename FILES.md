@@ -1,6 +1,6 @@
 # The shipped files
 
-48 files, 44,549,249 bytes. Every file is a file of [Neuronte 0.1.5](https://github.com/itsmygithubacct/neuronte/tree/v0.1.5), copied byte for byte under the same name; all but the eight marked 2.3.0 are also files of 0.1.4. The four bundles marked 2.3.0 are opened beside the terminal bundle, each with the list of the characters it was trained on. All but four were already in Neuronte 0.1.2; the three marked 2.1.1 do the work of 33 files of 0.1.2, and the terminal bundle marked 2.2.0 takes the place of `neuronte-split-v8.nrt`. The last column is the file of 0.1.1 that did the same job.
+66 files, 56,148,762 bytes. Every file is a file of [Neuronte 0.1.6](https://github.com/itsmygithubacct/neuronte/tree/v0.1.6), copied byte for byte under the same name; all but the eighteen marked 2.4.0 are also files of 0.1.5, and all but those and the eight marked 2.3.0 are files of 0.1.4. The four bundles marked 2.3.0 are opened beside the terminal bundle, each with the list of the characters it was trained on; so are the six terminal bundles marked 2.4.0. The three bar bundles marked 2.4.0 are for a terminal's own bars. All but four were already in Neuronte 0.1.2; the three marked 2.1.1 do the work of 33 files of 0.1.2, and the terminal bundle marked 2.2.0 takes the place of `neuronte-split-v8.nrt`. The last column is the file of 0.1.1 that did the same job.
 
 | Job | File | Bytes | SHA-256 | In 0.1.1 |
 |---|---|---:|---|---|
@@ -13,6 +13,24 @@
 | Its list of characters (2.3.0) | `neuronte-term-symbol-v1.list.txt` | 1,015 | `fde0648dbe7c29f4b1a57efde4daba30c194b2c3899b87c64c4170a321133f95` | none |
 | Terminal, 323 Miscellaneous Symbols and Dingbats (2.3.0) | `neuronte-term-dingbat-v1.nrt` | 2,000,188 | `0f2a6b1548c0b129ab127d6e23a96c3e7e631865f9bee37ead58513293eaf6b3` | none |
 | Its list of characters (2.3.0) | `neuronte-term-dingbat-v1.list.txt` | 630 | `fe4cb65a64767ebb0b1340aa4425fa97626e4667e2f66fc2c85a04019aa92f71` | none |
+| Terminal, 812 more letters of Latin, Greek and Cyrillic: the rest of Latin Extended-B, IPA and phonetic letters, small capitals, modifier letters, Latin Extended-C and -D, more Greek, Coptic and Cyrillic (2.4.0) | `neuronte-term-letters-v1.nrt` | 5,882,132 | `a5b23948026761ce58ed11b3542df38b842a6f1c93fd2c4971e60d9d4b7700fd` | none |
+| Its list of characters (2.4.0) | `neuronte-term-letters-v1.list.txt` | 6,017 | `5ab408b55ab47d538fb39f6fe117b0123da360e89f7890b65b5e1fb452f415a8` | none |
+| Terminal, 310 characters made by rule: 64 Yijing hexagrams, 87 Tai Xuan Jing figures, 100 domino tiles, 59 playing cards (2.4.0) | `neuronte-term-blocks-v1.nrt` | 849,696 | `8c3a73904ff0301eb96ea2a9d2ef6a926cc69406fe057298be093f248c2505c6` | none |
+| Its list of characters (2.4.0) | `neuronte-term-blocks-v1.list.txt` | 424 | `4f3a727fd6fd8c1c809c0002b65916c8268b7f10c09663e1a2a8cb61bcef7f37` | none |
+| Terminal, 179 letters and digits of the sans-serif, monospace and double-struck mathematical alphabets (2.4.0) | `neuronte-term-mathalpha-v1.nrt` | 971,056 | `b6bd7d73a1c2116b4383d70c810fe780ca3e36846c32c7178c1e5a2764167c57` | none |
+| Its list of characters (2.4.0) | `neuronte-term-mathalpha-v1.list.txt` | 1,721 | `5b004506be1bb3724a5f8b531ec346bdd0693e006f3a825ae180f27ff361a8c1` | none |
+| Terminal, 168 Canadian syllabics (2.4.0) | `neuronte-term-syllabics-v1.nrt` | 856,824 | `bb992b61ed2c31a6ae81240e5504a9adb95bf19d8a933f4066c149f37de5f5af` | none |
+| Its list of characters (2.4.0) | `neuronte-term-syllabics-v1.list.txt` | 1,445 | `dbbe5d6efaf1082d96a7940bb7d6846e186cdf23e1e00609f5557ec9a66afaf8` | none |
+| Terminal, the 48 characters of Lisu (2.4.0) | `neuronte-term-scripts-v1.nrt` | 343,188 | `d18eda009dfb6a955ca0a74e0f22f74f7f314d34a036ed331be44c581fb552e6` | none |
+| Its list of characters (2.4.0) | `neuronte-term-scripts-v1.list.txt` | 593 | `9435f0e5e5d95d12eab0e8eeb779661edae60ebe63b87ef68db7f643d379d098` | none |
+| Terminal, 197 characters: Hebrew letters, presentation forms and punctuation, Lao letters and vowel signs, the baht sign, faces and moon phases in one colour (2.4.0) | `neuronte-term-rest-v1.nrt` | 1,484,956 | `9a92c86c183fa9b435d89663780c643a2031f853e0096bd233e7bfdf431a4b6d` | none |
+| Its list of characters (2.4.0) | `neuronte-term-rest-v1.list.txt` | 1,952 | `9c038bc0b95d6376ea75370560b875d5166ba2c161f418c546117ea2b077bda3` | none |
+| The 39 symbols the Kilix terminal prints on its bars, one cell each (2.4.0) | `neuronte-kilix-chrome-v1.nrt` | 343,224 | `235e2e9d9ec83f83f72feb848df1fb1f47a7ca4d0b794cdf9d3763646cfb892c` | none |
+| Its list of characters (2.4.0) | `neuronte-kilix-chrome-v1.list.txt` | 583 | `94088e432be843ad246a49791958675a56f189e474d796934ff50122a5f960c0` | none |
+| 41 of those symbols drawn for a box of two cells (2.4.0) | `neuronte-kilix-chrome-v2.nrt` | 457,336 | `8583eadf252d499fe5b8b3ae5c28c4716cdd502c6f509f5a5c473dd033e9519c` | none |
+| Its list of symbols (2.4.0) | `neuronte-kilix-chrome-v2.symbols.txt` | 901 | `9022dd947a1433a64fec6530df5f50316d9759dad3748332860d73d376ae032d` | none |
+| Nine weather symbols in colour, two cells each, asked for by halves (2.4.0) | `neuronte-weather-colour-v1.nrt` | 396,956 | `517cad856fc4605fdfa12c7fa3847ca0b39e8a7dba2639ce3a6b0dbaac8965d2` | none |
+| Its list of symbols (2.4.0) | `neuronte-weather-colour-v1.symbols.txt` | 509 | `e5cf7bda18e26bb06b7d2755c0bbfd71999e77a4b53871c3ebdb7fe2380f058f` | none |
 | Emoji | `neuronte-emoji-v1.nrt` | 4,785,292 | `7aaccccf37175e3b5b973bb89b4731011308e6d1e6a8e8f12a1e5e6e5bc7973d` | `neuronte-emoji-v0.nrt` |
 | Icons | `neuronte-icon-v2.nrt` | 496,184 | `0e85a2a45eaa99f555ca48e801a8a7c1094c9d2b791fec75594079c21f008f51` | `neuronte-icon-v1.nrt` |
 | Kilix flame | `neuronte-flame-v1.nrt` | 57,372 | `eca551241b2f46934412c348a6e96bee13dafac214439a9c6d5c7bf0d11713bf` | `neuronte-flame-v0.nrt` |

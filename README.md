@@ -9,8 +9,8 @@ This repository is **Neuronte 2**, the slim set: the C library and one
 packed net for each job, and nothing else. It is 34 MB. The full project,
 with the training code, every generation of every net and the measurements
 behind them, is [Neuronte 0.1.x](https://github.com/itsmygithubacct/neuronte).
-Every net is a file of [Neuronte 0.1.5](https://github.com/itsmygithubacct/neuronte/tree/v0.1.5),
-copied byte for byte under the same name, and the library is 0.1.5's
+Every net is a file of [Neuronte 0.1.6](https://github.com/itsmygithubacct/neuronte/tree/v0.1.6),
+copied byte for byte under the same name, and the library is 0.1.6's
 source.
 [CHANGES.md](CHANGES.md) lists what each version added.
 
@@ -49,6 +49,8 @@ hundred lines, and shows the whole of the text interface.
 |---|---|---|
 | Terminal text: ASCII, accented Latin, Greek, Cyrillic, symbols, arrows, math signs, box and block characters, Braille | `neuronte-split-v9.nrt` | [split-v9](docs/neuronte-split-v9.md) |
 | 1,864 more terminal characters, in four bundles opened beside the first: more Latin and Greek letters, arrows and math operators, technical and geometric signs, dingbats | `neuronte-term-latin-v1.nrt`, `neuronte-term-math-v1.nrt`, `neuronte-term-symbol-v1.nrt`, `neuronte-term-dingbat-v1.nrt` | [more characters](#more-terminal-characters) |
+| 1,714 more terminal characters, in six bundles opened the same way: more Latin, Greek and Cyrillic letters, hexagrams, dominoes and cards, mathematical alphabets, Canadian syllabics, Lisu, Hebrew, Lao, faces and moons | `neuronte-term-letters-v1.nrt`, `neuronte-term-blocks-v1.nrt`, `neuronte-term-mathalpha-v1.nrt`, `neuronte-term-syllabics-v1.nrt`, `neuronte-term-scripts-v1.nrt`, `neuronte-term-rest-v1.nrt` | [more characters](#more-terminal-characters) |
+| The symbols of a terminal's own bars: one cell, two cells, and nine weather symbols in colour | `neuronte-kilix-chrome-v1.nrt`, `neuronte-kilix-chrome-v2.nrt`, `neuronte-weather-colour-v1.nrt` | [bar symbols](#symbols-for-a-terminals-bars) |
 | Desktop text, 1 to 16 px, upright | `neuronte-ui1-v1.nrt` to `neuronte-ui16-v1.nrt` | [faces](#desktop-faces) |
 | Desktop text, 3 to 16 px, italic | `neuronte-ui3-italic-v1.nrt` to `neuronte-ui16-italic-v1.nrt` | [faces](#desktop-faces) |
 | Desktop text, 17 to 32 px, upright and italic | `neuronte-ui-scaled-latin1-v0.nrt`, with `neuronte-ui-scaled-latin1-italic-advances-v0.nrt` | [scaled face](docs/neuronte-ui-scaled-v0.md) |
@@ -243,8 +245,8 @@ each letter is. `font/ui-tops.json` gives the first, and each
 
 ## More terminal characters
 
-Four more bundles draw 1,864 characters the terminal bundle was not trained
-on. With it that is 3,205 characters. Each is a file of its own, opened
+Ten more bundles draw 3,578 characters the terminal bundle was not trained
+on. With it that is 4,919 characters. Each is a file of its own, opened
 beside `neuronte-split-v9.nrt`; none of them draws ASCII or anything else
 split-v9 draws, and no two share a character.
 
@@ -254,8 +256,14 @@ split-v9 draws, and no two share a character.
 | `neuronte-term-math-v1.nrt` | 465 arrows and mathematical operators | 47 nets; 24 passed, 23 missed and ship by the owner's choice; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.5/weights/neuronte-term-math-v1.md) |
 | `neuronte-term-symbol-v1.nrt` | 480 punctuation, letterlike, technical and geometric characters, and U+FFFD | 48 nets; 20 passed, 28 missed and ship by the owner's choice; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.5/weights/neuronte-term-symbol-v1.md) |
 | `neuronte-term-dingbat-v1.nrt` | 323 Miscellaneous Symbols and Dingbats | 35 nets; 11 passed, 24 missed and ship by the owner's choice; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.5/weights/neuronte-term-dingbat-v1.md) |
+| `neuronte-term-letters-v1.nrt` | 812 more letters of Latin, Greek and Cyrillic: the rest of Latin Extended-B, IPA and phonetic letters, small capitals, modifier letters, Latin Extended-C and -D, more Greek, Coptic and Cyrillic | 103 nets, each passing its limits with both seeds; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.6/weights/neuronte-term-letters-v1.md) |
+| `neuronte-term-blocks-v1.nrt` | 310 characters made by rule: 64 Yijing hexagrams, 87 Tai Xuan Jing figures, 100 domino tiles, 59 playing cards | 5 tiled nets and 1 group net, each passing its limits with both seeds; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.6/weights/neuronte-term-blocks-v1.md) |
+| `neuronte-term-mathalpha-v1.nrt` | 179 letters and digits of the sans-serif, monospace and double-struck mathematical alphabets | 17 nets, each passing its limits with both seeds; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.6/weights/neuronte-term-mathalpha-v1.md) |
+| `neuronte-term-syllabics-v1.nrt` | 168 Canadian syllabics | 15 nets, each passing its limits with both seeds; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.6/weights/neuronte-term-syllabics-v1.md) |
+| `neuronte-term-scripts-v1.nrt` | The 48 characters of Lisu | 6 nets, each passing its limits with both seeds; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.6/weights/neuronte-term-scripts-v1.md) |
+| `neuronte-term-rest-v1.nrt` | 197 characters: Hebrew letters, presentation forms and punctuation, Lao letters and vowel signs, the baht sign, faces and moon phases in one colour | 26 nets, each passing its limits with both seeds; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.6/weights/neuronte-term-rest-v1.md) |
 
-A program opens the five files and, for each character, draws with the
+A program opens the eleven files and, for each character, draws with the
 first whose `neuronte_untrained(handle, character)` is 0:
 
 ```c
@@ -274,11 +282,37 @@ An invalid code (a surrogate, or a value above U+10FFFF) is drawn as
 U+FFFD by the library, so `neuronte-term-symbol-v1`, which has U+FFFD,
 reports those trained too.
 
-Most of these nets missed at least one of the limits set for them before
-they were trained: 58 of the 204 passed with both seeds, and the other 146
-ship because the owner looked at them side by side with the drawings and
-chose to. Each card says which limit each net missed and by how much. The
+Most of the nets of the first four bundles missed at least one of the
+limits set for them before they were trained: 58 of the 204 passed with
+both seeds, and the other 146 ship because the owner looked at them side by
+side with the drawings and chose to. The six bundles of 2.4.0 were made by
+an automatic rule: a group that failed was trained once more as two halves
+and a half that failed again was left out, so every net in them passed;
+their limits were amended while the nets were scored, and each card says
+how. Four letters, U+1DB4 to U+1DB7, were left out that way. Each card says which limit each net missed and by how much. The
 drawings are the project's own; no font file was read to make them.
+
+## Symbols for a terminal's bars
+
+Three bundles hold the symbols a terminal prints on its own bars. They are
+not terminal bundles and are not in the count above; a program opens them
+before the terminal bundles and draws a symbol with the first that was
+trained on it. `weights/NAME.list.txt` or `weights/NAME.symbols.txt` names
+what each holds.
+
+| File | Symbols | Nets |
+|---|---|---|
+| `neuronte-kilix-chrome-v1.nrt` | The 39 symbols the Kilix terminal prints on its bars, one cell each | 6 nets, each passing its limits with both seeds; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.6/weights/neuronte-kilix-chrome-v1.md) |
+| `neuronte-kilix-chrome-v2.nrt` | 41 of those symbols drawn for a box of two cells | 8 nets, each passing its limits with both seeds; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.6/weights/neuronte-kilix-chrome-v2.md) |
+| `neuronte-weather-colour-v1.nrt` | Nine weather symbols in colour, two cells each, asked for by halves | 1 colour net, each passing its limits with both seeds; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.6/weights/neuronte-weather-colour-v1.md) |
+
+`neuronte-kilix-chrome-v2` is asked for a box of two cells, `w` by `h`
+with `w` twice the cell's width: `neuronte_coverage(handle, symbol, w,
+2 * h, 0, out)` gives `w` by `2 * h` values, and the mean of each pair of
+rows is the box. `neuronte-weather-colour-v1` is asked as an emoji is, a half at
+a time, with `neuronte_coverage_layers_half()` or `neuronte_draw_half()`.
+In half cells under 14 pixels wide the library snaps edges, and the
+picture then differs from the drawing by 4 to 6 of 255 on average.
 
 ## The nets, one by one
 

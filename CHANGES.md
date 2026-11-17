@@ -1,7 +1,28 @@
 # Changes
 
-## Unreleased
+## 2.4.0
 
+- **1,714 more terminal characters**, 4,919 with `neuronte-split-v9` and
+  the four bundles of 2.3.0, in six more bundles opened the same way:
+  `neuronte-term-letters-v1` (812 Latin, Greek and Cyrillic letters),
+  `neuronte-term-blocks-v1` (310 hexagrams, Tai Xuan Jing figures, domino
+  tiles and playing cards), `neuronte-term-mathalpha-v1` (179 letters and
+  digits of three mathematical alphabets), `neuronte-term-syllabics-v1`
+  (168 Canadian syllabics), `neuronte-term-scripts-v1` (the 48 characters
+  of Lisu) and `neuronte-term-rest-v1` (197 Hebrew and Lao characters,
+  faces and moons). Nothing an earlier file draws has changed. Every net
+  in them passed its limits with both seeds; the limits were amended while
+  the nets were scored, and four letters whose group failed twice are left
+  out. The cards in Neuronte 0.1.6 say how.
+- **Symbols for a terminal's own bars**: `neuronte-kilix-chrome-v1` (39
+  symbols, one cell), `neuronte-kilix-chrome-v2` (41 symbols for a box of
+  two cells) and `neuronte-weather-colour-v1` (nine weather symbols in
+  colour, two cells). The [README](README.md#symbols-for-a-terminals-bars)
+  shows how each is asked.
+- Every weight file is now a file of Neuronte 0.1.6; the 48 that were here
+  before are unchanged. `src/neuronte.c` and `include/neuronte.h` are
+  unchanged, and `src/cells.c` and `include/neuronte_cells.h` are 0.1.6's
+  byte for byte.
 - **Font files for programs that cannot run a net.** `neuronte-fontfile`
   (C11, links only the library and libm) writes what the nets draw as five
   TrueType files: Neuronte Sans in four styles from the desktop faces (154
