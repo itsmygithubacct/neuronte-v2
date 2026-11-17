@@ -332,8 +332,9 @@ sudo systemctl --global enable neuronte-setup-user.service   # when there are us
 (kept when one is there), the fontconfig file in `/etc/fonts/conf.d`,
 the two system units and the user unit, and this page and
 `neuronte-cells.md`. It does not install the weights or the library:
-the settings say where the weights are, and the three commands carry
-the library inside them. A program that is to read cells files needs
+the settings say where the weights are, and `neuronte-fontfile` and
+`neuronte-cells` are linked with the library's code, not with a shared
+library. A program that is to read cells files needs
 this version's `libneuronte` and `include/neuronte_cells.h`, installed
 wherever that program takes the library from. An
 image build runs the same `neuronte-setup` in the image, so the first
