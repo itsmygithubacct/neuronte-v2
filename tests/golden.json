@@ -24,6 +24,30 @@
   "layers": 1,
   "nets": 35
  },
+ "neuronte-term-dingbat-v1.nrt": {
+  "coverage_sha256": "a937eba525b74936d0b024f9642f7b95bc9b1c3cad4e24872b457285870cdf79",
+  "layers": 1,
+  "list_sha256": "5e400599017a6f4282a7e2422c98f93faf56fc43fc38904148667a634d16ef8c",
+  "nets": 36
+ },
+ "neuronte-term-latin-v1.nrt": {
+  "coverage_sha256": "40ec670da4d0c3ee802920105173074df599712e4ffb3142cddf296ca821e512",
+  "layers": 1,
+  "list_sha256": "7755d4e138c380a97b27a6204daca3ff75380e1d36424a4e84101cb4cc6931a1",
+  "nets": 75
+ },
+ "neuronte-term-math-v1.nrt": {
+  "coverage_sha256": "40ec670da4d0c3ee802920105173074df599712e4ffb3142cddf296ca821e512",
+  "layers": 1,
+  "list_sha256": "4391791dba1c662be37b3cc3f8542bed0bd6459d387a7ab3192631548199a3e6",
+  "nets": 48
+ },
+ "neuronte-term-symbol-v1.nrt": {
+  "coverage_sha256": "13a53607e2d7a47a78f309ac7dd334f839ab146e6fb4c5261a6f297a28c8017b",
+  "layers": 1,
+  "list_sha256": "27d444b89b50fd7effb4adfdfecab4c65fe17ed7bb5e94e84c36100139b84f93",
+  "nets": 49
+ },
  "neuronte-ui-large-latin1-v1.nrt": {
   "advance_sha256": "a9a85d2bee116caeb6a874103acecca12ccde4f11253384a69f510d4c329cad5",
   "coverage_sha256": "7171a7c06d6993a41639112fc083526c72b6ca2a59c72d38f41a1610488582c6",

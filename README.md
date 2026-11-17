@@ -9,8 +9,8 @@ This repository is **Neuronte 2**, the slim set: the C library and one
 packed net for each job, and nothing else. It is 34 MB. The full project,
 with the training code, every generation of every net and the measurements
 behind them, is [Neuronte 0.1.x](https://github.com/itsmygithubacct/neuronte).
-Every net is a file of [Neuronte 0.1.4](https://github.com/itsmygithubacct/neuronte/tree/v0.1.4),
-copied byte for byte under the same name, and the library is 0.1.4's
+Every net is a file of [Neuronte 0.1.5](https://github.com/itsmygithubacct/neuronte/tree/v0.1.5),
+copied byte for byte under the same name, and the library is 0.1.5's
 source.
 [CHANGES.md](CHANGES.md) lists what each version added.
 
@@ -48,6 +48,7 @@ hundred lines, and shows the whole of the text interface.
 | Job | File | In depth |
 |---|---|---|
 | Terminal text: ASCII, accented Latin, Greek, Cyrillic, symbols, arrows, math signs, box and block characters, Braille | `neuronte-split-v9.nrt` | [split-v9](docs/neuronte-split-v9.md) |
+| 1,864 more terminal characters, in four bundles opened beside the first: more Latin and Greek letters, arrows and math operators, technical and geometric signs, dingbats | `neuronte-term-latin-v1.nrt`, `neuronte-term-math-v1.nrt`, `neuronte-term-symbol-v1.nrt`, `neuronte-term-dingbat-v1.nrt` | [more characters](#more-terminal-characters) |
 | Desktop text, 1 to 16 px, upright | `neuronte-ui1-v1.nrt` to `neuronte-ui16-v1.nrt` | [faces](#desktop-faces) |
 | Desktop text, 3 to 16 px, italic | `neuronte-ui3-italic-v1.nrt` to `neuronte-ui16-italic-v1.nrt` | [faces](#desktop-faces) |
 | Desktop text, 17 to 32 px, upright and italic | `neuronte-ui-scaled-latin1-v0.nrt`, with `neuronte-ui-scaled-latin1-italic-advances-v0.nrt` | [scaled face](docs/neuronte-ui-scaled-v0.md) |
@@ -195,6 +196,45 @@ recipe, the acceptance rule and the measured speed of every face in it:
 A desktop also needs to know where a face sits in its cell and how wide
 each letter is. `font/ui-tops.json` gives the first, and each
 `font/ui-EM.txt` holds that size's advances and pixels.
+
+## More terminal characters
+
+Four more bundles draw 1,864 characters the terminal bundle was not trained
+on. With it that is 3,205 characters. Each is a file of its own, opened
+beside `neuronte-split-v9.nrt`; none of them draws ASCII or anything else
+split-v9 draws, and no two share a character.
+
+| File | Characters | Nets and the limits set before training |
+|---|---|---|
+| `neuronte-term-latin-v1.nrt` | 596 more Latin letters: Latin Extended-B, IPA, spacing modifiers, Latin Extended Additional, Greek Extended | 74 nets; 3 passed the limits set before training, 71 missed them and ship by the owner's choice; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.5/weights/neuronte-term-latin-v1.md) |
+| `neuronte-term-math-v1.nrt` | 465 arrows and mathematical operators | 47 nets; 24 passed, 23 missed and ship by the owner's choice; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.5/weights/neuronte-term-math-v1.md) |
+| `neuronte-term-symbol-v1.nrt` | 480 punctuation, letterlike, technical and geometric characters, and U+FFFD | 48 nets; 20 passed, 28 missed and ship by the owner's choice; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.5/weights/neuronte-term-symbol-v1.md) |
+| `neuronte-term-dingbat-v1.nrt` | 323 Miscellaneous Symbols and Dingbats | 35 nets; 11 passed, 24 missed and ship by the owner's choice; [card](https://github.com/itsmygithubacct/neuronte/blob/v0.1.5/weights/neuronte-term-dingbat-v1.md) |
+
+A program opens the five files and, for each character, draws with the
+first whose `neuronte_untrained(handle, character)` is 0:
+
+```c
+static neuronte *pick(neuronte **bundle, int count, uint32_t character) {
+    for (int i = 0; i < count; i++)
+        if (neuronte_untrained(bundle[i], character) == 0)
+            return bundle[i];
+    return bundle[0]; /* nobody was trained on it: split-v9, with its mark if asked */
+}
+```
+
+`weights/NAME.list.txt` beside each bundle lists the characters it was
+trained on, as `U+XXXX` and `U+XXXX..U+YYYY`, for a program that would
+rather build one table. `make test` checks every bundle against its list.
+An invalid code (a surrogate, or a value above U+10FFFF) is drawn as
+U+FFFD by the library, so `neuronte-term-symbol-v1`, which has U+FFFD,
+reports those trained too.
+
+Most of these nets missed at least one of the limits set for them before
+they were trained: 58 of the 204 passed with both seeds, and the other 146
+ship because the owner looked at them side by side with the drawings and
+chose to. Each card says which limit each net missed and by how much. The
+drawings are the project's own; no font file was read to make them.
 
 ## The nets, one by one
 

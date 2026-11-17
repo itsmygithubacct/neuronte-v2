@@ -20,6 +20,10 @@ usage: python3 tests/check_set.py build/libneuronte.so [--write-golden]
    For the two faces that draw many sizes, lines of text and sheared letters
    drawn at several sizes are part of the hash.
    --write-golden records them instead (done once, when the set is cut).
+6. Every bundle with a list (weights/NAME.list.txt beside weights/NAME.nrt)
+   was trained on exactly the characters of its list, no two lists share a
+   character, and none is a character of the terminal bundle. Every listed
+   character's coverage at 8x16 and 12x24 is part of the bundle's hash.
 """
 import ctypes
 import hashlib
@@ -121,6 +125,55 @@ def face(lib, name):
     return ok, drawn, wrong
 
 
+def read_list(name):
+    """The characters of weights/NAME.list.txt (U+XXXX or U+XXXX..U+YYYY), or None without one."""
+    path = os.path.join(ROOT, "weights", name[:-4] + ".list.txt")
+    if not os.path.exists(path):
+        return None
+    out = set()
+    with open(path) as fh:
+        for line in fh:
+            if line.startswith("#"):
+                continue
+            for a, b in re.findall(r"U\+([0-9A-Fa-f]{4,6})(?:\.\.U\+([0-9A-Fa-f]{4,6}))?", line):
+                out |= set(range(int(a, 16), int(b or a, 16) + 1))
+    return out
+
+
+def trained(lib, name):
+    """Every scalar the bundle reports trained. A surrogate is drawn as U+FFFD, so it is left out."""
+    lib.neuronte_untrained.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    h = open_file(lib, os.path.join(ROOT, "weights", name))
+    got = {s for s in range(0x110000) if not 0xD800 <= s <= 0xDFFF and lib.neuronte_untrained(h, s) == 0}
+    lib.neuronte_close(h)
+    return got
+
+
+def lists(lib, names):
+    bad, seen, total = 0, {}, 0
+    base = trained(lib, "neuronte-split-v9.nrt")
+    with_list = [n for n in names if read_list(n) is not None]
+    for n in with_list:
+        want, got = read_list(n), trained(lib, n)
+        total += len(want)
+        if want != got:
+            print(f"FAIL {n}: trained on {len(got)} characters, its list has {len(want)}; "
+                  f"{len(got - want)} not listed, {len(want - got)} listed and not trained")
+            bad += 1
+        if want & base:
+            print(f"FAIL {n}: {len(want & base)} listed characters are in neuronte-split-v9.nrt")
+            bad += 1
+        for s in want:
+            if s in seen:
+                print(f"FAIL {n}: U+{s:04X} is also in the list of {seen[s]}")
+                bad += 1
+                break
+            seen[s] = n
+    print(f"check_set: {len(with_list)} bundles with a list, {total} characters, each trained on exactly its list; "
+          f"with the terminal bundle {total + len(base)} characters")
+    return bad
+
+
 def pixels(lib, name):
     h = open_file(lib, os.path.join(ROOT, "weights", name))
     layers = max(lib.neuronte_layers(h), 1)
@@ -136,6 +189,16 @@ def pixels(lib, name):
                 dig.update(bytes(masks))
                 dig.update(bytes(ents))
     entry["coverage_sha256"] = dig.hexdigest()
+    listed = read_list(name)
+    if listed:
+        dig = hashlib.sha256()
+        for w, ht in ((8, 16), (12, 24)):
+            masks = (ctypes.c_float * (w * ht * layers))()
+            ents = (ctypes.c_uint8 * layers)()
+            for s in sorted(listed):
+                r = lib.neuronte_coverage_layers(h, s, w, ht, 0, masks, ents)
+                dig.update(f"{s:x}:{w}x{ht}:{r};".encode() + bytes(masks))
+        entry["list_sha256"] = dig.hexdigest()
     if lib.neuronte_advances(h) > 0:
         adv = hashlib.sha256()
         for em in (8, 12, 16, 24, 32, 48):
@@ -301,6 +364,7 @@ def main():
     print(f"check_set: {len(faces)} faces, {letters} binary letters at their em, {off} wrong pixels in all")
     failed += text_masks(lib)
     failed += untrained(lib)
+    failed += lists(lib, names)
     got = {n: pixels(lib, n) for n in names}
     if write:
         with open(GOLDEN, "w") as fh:

@@ -1,5 +1,24 @@
 # Changes
 
+## 2.3.0
+
+- **1,864 more terminal characters**, 3,205 with `neuronte-split-v9`, in
+  four bundles opened beside it: `neuronte-term-latin-v1` (596 Latin and
+  Greek letters), `neuronte-term-math-v1` (465 arrows and operators),
+  `neuronte-term-symbol-v1` (480 punctuation, letterlike, technical and
+  geometric characters) and `neuronte-term-dingbat-v1` (323 symbols and
+  dingbats). A program draws a character with the first bundle whose
+  `neuronte_untrained()` is 0; the [README](README.md#more-terminal-characters)
+  shows how. Nothing split-v9 draws has changed.
+- Of their 204 nets, 58 passed the limits set before training with both
+  seeds; 146 missed at least one and ship by the owner's choice after a
+  side-by-side review. The cards in Neuronte 0.1.5 say where.
+- Each of the four has `weights/NAME.list.txt`, the characters it was
+  trained on, and `make test` checks each bundle against its list, that no
+  two share a character, and that none repeats a character of split-v9.
+- The library is unchanged. Every weight file is now a file of Neuronte
+  0.1.5; the forty that were here before are unchanged.
+
 ## 2.2.0
 
 - **165 more terminal characters.** `neuronte-split-v9` takes the place of

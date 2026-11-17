@@ -1,10 +1,18 @@
 # The shipped files
 
-40 files, 32,832,199 bytes. Every file is a file of [Neuronte 0.1.4](https://github.com/itsmygithubacct/neuronte/tree/v0.1.4), copied byte for byte under the same name. All but four were already in Neuronte 0.1.2; the three marked 2.1.1 do the work of 33 files of 0.1.2, and the terminal bundle marked 2.2.0 takes the place of `neuronte-split-v8.nrt`. The last column is the file of 0.1.1 that did the same job.
+48 files, 44,549,249 bytes. Every file is a file of [Neuronte 0.1.5](https://github.com/itsmygithubacct/neuronte/tree/v0.1.5), copied byte for byte under the same name; all but the eight marked 2.3.0 are also files of 0.1.4. The four bundles marked 2.3.0 are opened beside the terminal bundle, each with the list of the characters it was trained on. All but four were already in Neuronte 0.1.2; the three marked 2.1.1 do the work of 33 files of 0.1.2, and the terminal bundle marked 2.2.0 takes the place of `neuronte-split-v8.nrt`. The last column is the file of 0.1.1 that did the same job.
 
 | Job | File | Bytes | SHA-256 | In 0.1.1 |
 |---|---|---:|---|---|
 | Terminal font, every character (2.2.0) | `neuronte-split-v9.nrt` | 3,607,088 | `0a92f223d47f1680929b2c5d7512d1a1728d4871e6653b33cbaad060e6bb90c0` | `neuronte-split-v5.nrt` |
+| Terminal, 596 more Latin letters: Latin Extended-B, IPA, spacing modifiers, Latin Extended Additional, Greek Extended (2.3.0) | `neuronte-term-latin-v1.nrt` | 4,280,128 | `d54279bcbb190178f61a10c1d55f9840cadbd6f1b858a9993c232dc0106a473b` | none |
+| Its list of characters (2.3.0) | `neuronte-term-latin-v1.list.txt` | 4,475 | `2edaf0d91269550dfcb4e951eebf6e9f9418ee7d343040af1c75bbc4f655541f` | none |
+| Terminal, 465 arrows and mathematical operators (2.3.0) | `neuronte-term-math-v1.nrt` | 2,686,120 | `cf30e22efe80b233c73ca2f0c78490c153e172995187cdc1798206db647b1f77` | none |
+| Its list of characters (2.3.0) | `neuronte-term-math-v1.list.txt` | 754 | `0dd409553fd188325a92ee0a33b2064da9f030eca23ed0768fb751fdea226a8a` | none |
+| Terminal, 480 punctuation, letterlike, technical and geometric characters, and U+FFFD (2.3.0) | `neuronte-term-symbol-v1.nrt` | 2,743,740 | `5c6121177da923e9c8c05cc45960715b893db2b123712eb6c3e8891924ca2480` | none |
+| Its list of characters (2.3.0) | `neuronte-term-symbol-v1.list.txt` | 1,015 | `fde0648dbe7c29f4b1a57efde4daba30c194b2c3899b87c64c4170a321133f95` | none |
+| Terminal, 323 Miscellaneous Symbols and Dingbats (2.3.0) | `neuronte-term-dingbat-v1.nrt` | 2,000,188 | `0f2a6b1548c0b129ab127d6e23a96c3e7e631865f9bee37ead58513293eaf6b3` | none |
+| Its list of characters (2.3.0) | `neuronte-term-dingbat-v1.list.txt` | 630 | `fe4cb65a64767ebb0b1340aa4425fa97626e4667e2f66fc2c85a04019aa92f71` | none |
 | Emoji | `neuronte-emoji-v1.nrt` | 4,785,292 | `7aaccccf37175e3b5b973bb89b4731011308e6d1e6a8e8f12a1e5e6e5bc7973d` | `neuronte-emoji-v0.nrt` |
 | Icons | `neuronte-icon-v2.nrt` | 496,184 | `0e85a2a45eaa99f555ca48e801a8a7c1094c9d2b791fec75594079c21f008f51` | `neuronte-icon-v1.nrt` |
 | Kilix flame | `neuronte-flame-v1.nrt` | 57,372 | `eca551241b2f46934412c348a6e96bee13dafac214439a9c6d5c7bf0d11713bf` | `neuronte-flame-v0.nrt` |
