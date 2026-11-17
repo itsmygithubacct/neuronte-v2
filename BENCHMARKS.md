@@ -193,4 +193,4 @@ legacy computing blocks.
 The test that made these numbers, with three terminal panes that draw the
 same typed text side by side, is in
 kilix-bench, under
-[`sidebyside/`](https://github.com/itsmygithubacct/kilix-bench/tree/work/neuronte-sidebyside/sidebyside).
+[`sidebyside/`](https://github.com/itsmygithubacct/kilix-bench/tree/main/sidebyside).
