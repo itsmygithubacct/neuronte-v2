@@ -94,6 +94,12 @@ The check in `make test` reads the files with a reader of its own; where
 Pillow is installed it also loads these files, and only these, through
 FreeType.
 
+## Cells files
+
+A cells file ([docs/neuronte-cells.md](docs/neuronte-cells.md)) holds
+nothing but what `neuronte_coverage_styled()` computes from one weight
+file, and the size, time and SHA-256 of that weight file.
+
 ## Licence scope
 
 MIT, copyright 2026 itsmygithubacct. See [LICENSE](LICENSE). The licence

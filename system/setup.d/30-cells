@@ -1,0 +1,17 @@
+#!/bin/sh
+# A step of neuronte-setup (see system/neuronte-setup): cells files, the
+# characters a terminal is likely to show first, drawn once and kept where
+# every process maps them. Not an early step: a program that finds no cells
+# file asks the net, as it always did. docs/neuronte-cells.md.
+# MIT licence. See LICENSE.
+set -u
+step=30-cells
+word=${1-}
+set -- --weights "${NEURONTE_WEIGHTS:?}" --out "${NEURONTE_STATE:?}/cells" \
+    --stamp "$NEURONTE_STATE/$step.stamp" --conf "${NEURONTE_SETUP_CONF:-/etc/neuronte/setup.conf}"
+case $word in
+check) exec "${NEURONTE_CELLS:-neuronte-cells}" "$@" --check ;;
+run) exec "${NEURONTE_CELLS:-neuronte-cells}" "$@" --threads "${NEURONTE_THREADS:-4}" \
+    ${NEURONTE_FORCE:+--force} ;;
+*) echo "usage: $step check|run" >&2; exit 2 ;;
+esac

@@ -24,6 +24,13 @@
 #    $XDG_STATE_HOME/neuronte, readable by that user only, tells the step
 #    its scope and the system's state directory, reads the user's own
 #    settings over the system's, and refuses --early.
+# 9. The cells step (30-cells, tools/neuronte-cells.c): the settings choose
+#    cells, characters and styles, for all bundles or for one; a changed
+#    setting or a touched file makes it not current; a file with a float
+#    changed and its size and time kept is found by --verify only; a cells
+#    file nobody asks for any more and what a stopped run left are removed;
+#    a bundle with a colour net gets none; a mistake in a setting fails the
+#    step; one thread and several write the same bytes.
 # It leaves BUILD_DIR/setup-test/state/fonts for tests/check_fontfile.py.
 set -u
 build=${1:?usage: check_setup.sh BUILD_DIR [THREADS]}
@@ -37,7 +44,7 @@ state=$t/state
 fonts=$state/fonts
 printf 'weights=%s\nstate=%s\nthreads=%s\n' "$root/weights" "$state" "$threads" > "$t/setup.conf"
 export NEURONTE_SETUP_CONF="$t/setup.conf" NEURONTE_SETUP_STEPS="$root/system/setup.d"
-export NEURONTE_FONTFILE="$build/neuronte-fontfile"
+export NEURONTE_FONTFILE="$build/neuronte-fontfile" NEURONTE_CELLS="$build/neuronte-cells"
 # fc-cache, when there is one, writes here and not into the caller's cache.
 export XDG_CACHE_HOME="$t/cache"
 setup="sh $root/system/neuronte-setup --quiet"
@@ -86,6 +93,9 @@ is "the run made NeuronteMono-Regular.ttf" -s "$fonts/NeuronteMono-Regular.ttf"
 expect 0 "--check when everything is made" $setup --check
 is "the fonts directory is readable by every user" "$(stat -c %a "$fonts")" = 755
 is "the font files are readable by every user" "$(stat -c %a "$fonts/NeuronteSans-Regular.ttf")" = 644
+is "the run made the newest split bundle's cells file" -s "$state/cells/neuronte-split-v9.cells"
+is "the cells file is readable by every user" \
+    "$(stat -c %a "$state/cells" "$state/cells/neuronte-split-v9.cells" | tr '\n' ' ')" = "755 644 "
 left=$(find "$state" -name '*.tmp' | wc -l)
 is "no temporary file is left" "$left" = 0
 
@@ -138,7 +148,7 @@ printf '#!/bin/sh\n[ "$1" = check ] && exit 1\necho "this step fails" >&2\nexit 
 chmod +x "$t/steps/10-fails"
 snapshot > "$t/before.txt"
 expect 1 "a run with a failing step" env NEURONTE_SETUP_STEPS="$t/steps" sh "$root/system/neuronte-setup"
-is "the steps after the failing one were looked at" "$(grep -c ': current$' "$t/out.txt")" = 2
+is "the steps after the failing one were looked at" "$(grep -c ': current$' "$t/out.txt")" = 3
 is "the failure is named" "$(grep -c '10-fails: FAILED (exit 3)' "$t/out.txt")" = 1
 expect 1 "--check with a step that is not current" env NEURONTE_SETUP_STEPS="$t/steps" $setup --check
 printf 'weights=%s\nstate=%s\nthreads=%s\nskip=10-fails\n' "$root/weights" "$state" "$threads" > "$t/skip.conf"
@@ -217,6 +227,67 @@ expect 0 "the system's steps are not the user's" $user $setup --user --list
 is "only the user's step is listed" "$(cat "$t/out.txt")" = 40-user-warm
 snapshot > "$t/after.txt"
 is "a user's run changed nothing of the system's" "$(sha "$t/before.txt")" = "$(sha "$t/after.txt")"
+
+# 9
+cs=$t/cells-state
+split=$cs/cells/neuronte-split-v9.cells
+conf() {
+    printf 'weights=%s\nstate=%s\nthreads=%s\n' "$root/weights" "$cs" "$threads" > "$t/cells.conf"
+    [ $# = 0 ] || printf '%s\n' "$@" >> "$t/cells.conf"
+}
+cells="env NEURONTE_SETUP_CONF=$t/cells.conf $setup --only 30-cells"
+tool="$build/neuronte-cells --weights $root/weights --out $cs/cells --stamp $cs/30-cells.stamp --conf $t/cells.conf"
+conf 'cells=9x18,5x10' 'cells_styles=regular,bold'
+expect 1 "the cells step's check with nothing made" $cells --check
+expect 0 "the cells step with settings" $cells
+# 189 characters of ASCII and Latin-1, two cells, two styles.
+is "the cells file holds what the settings ask for" "$(stat -c %s "$split")" = $((128 + 16 * 756 + 4 * 189 * 2 * (162 + 50)))
+expect 0 "the cells step's check after it" $cells --check
+expect 0 "--verify draws every entry again" $tool --verify --threads "$threads"
+expect 0 "one thread" "$build/neuronte-cells" --weights "$root/weights" --out "$t/cells-one" \
+    --conf "$t/cells.conf" --threads 1
+is "one thread and $threads write the same bytes" "$(sha "$t/cells-one/neuronte-split-v9.cells")" = "$(sha "$split")"
+cp -p "$split" "$t/keep.cells"
+printf '\377' | dd of="$split" bs=1 seek=$(($(stat -c %s "$split") - 2)) conv=notrunc 2> /dev/null
+touch -r "$t/keep.cells" "$split"
+expect 0 "a float changed with size and time kept is not seen by the check" $cells --check
+expect 1 "it is seen by --verify" $tool --verify --threads "$threads"
+touch "$split"
+expect 1 "a cells file with another time is not current" $cells --check
+expect 0 "it is made again" $cells
+is "with the same bytes as before" "$(sha "$split")" = "$(sha "$t/keep.cells")"
+conf 'cells=9x18' 'cells_chars.neuronte-term-dingbat-v1=2700-27BF' \
+    'cells.neuronte-ui14-v1=14x28' 'cells_chars.neuronte-ui14-v1=ascii'
+expect 1 "other settings make it not current" $cells --check
+expect 0 "a run with settings for single bundles" $cells
+is "a bundle given characters of its own has a cells file" -s "$cs/cells/neuronte-term-dingbat-v1.cells"
+is "a weight file the settings name has a cells file" -s "$cs/cells/neuronte-ui14-v1.cells"
+is "a bundle trained on none of the characters has none" ! -e "$cs/cells/neuronte-term-math-v1.cells"
+: > "$cs/cells/neuronte-split-v9.cells.999.tmp" # what a killed run leaves
+conf 'cells=9x18' 'cells.neuronte-emoji-v1=9x18' 'cells_chars.neuronte-emoji-v1=all'
+expect 0 "a run after the settings for single bundles are gone" $cells
+left=$(find "$cs/cells" -type f | sort | sed 's|.*/||' | tr '\n' ' ')
+# The symbol bundle is trained on one character of Latin-1.
+is "what nobody asks for is gone, and a colour net has no cells file" \
+    "$left" = "neuronte-split-v9.cells neuronte-term-symbol-v1.cells "
+expect 0 "--verify of what is left" $tool --verify --threads "$threads"
+find "$cs" ! -name setup.lock -exec stat -c '%n %i %s %y' {} + | sort > "$t/before.txt"
+expect 0 "the cells step when current" $cells
+find "$cs" ! -name setup.lock -exec stat -c '%n %i %s %y' {} + | sort > "$t/after.txt"
+is "the cells step when current changes nothing" "$(sha "$t/before.txt")" = "$(sha "$t/after.txt")"
+# A bundle of Kilix's own, by its name: all its characters, regular, at
+# Kilix's cells and their two-cell boxes. A desktop face stands in for it.
+mkdir -p "$t/kilix-weights"
+ln -s "$root/weights/neuronte-ui14-v1.nrt" "$t/kilix-weights/neuronte-kilix-test-v1.nrt"
+expect 0 "a bundle named neuronte-kilix-*" "$build/neuronte-cells" --weights "$t/kilix-weights" \
+    --out "$t/kilix-cells" --threads "$threads"
+is "it is drawn at Kilix's cells and two-cell boxes, regular, every character" \
+    "$(stat -c %s "$t/kilix-cells/neuronte-kilix-test-v1.cells")" = \
+    $((128 + 96 * 10 * 16 + 4 * 96 * (136 + 162 + 190 + 200 + 288 + 544 + 648 + 760 + 800 + 1152)))
+conf 'cells=9by18'
+expect 1 "a cell that is none in the settings" env NEURONTE_SETUP_CONF="$t/cells.conf" \
+    sh "$root/system/neuronte-setup" --only 30-cells
+is "the step is reported as failed" "$(grep -c '30-cells: FAILED (exit 2)' "$t/out.txt")" = 1
 
 if [ "$fails" != 0 ]; then
     echo "check_setup: $fails of $checks checks failed"

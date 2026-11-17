@@ -24,11 +24,28 @@
   `monospace`, after any font that is installed. A step may defer long
   work at a start to the run after the login screen, and `neuronte-setup
   --user` runs steps that must be done as each user.
+- **Cells files for programs that call the library.** A new part of the
+  library, `include/neuronte_cells.h` and `src/cells.c`
+  (`neuronte_cells_open`, `_find`, `_count`, `_entry`, `_close`,
+  `_write`), keeps coverage exactly as `neuronte_coverage_styled()`
+  writes it in a file that every process maps read-only.
+  `neuronte-cells`, run by `neuronte-setup` as the step `30-cells`,
+  draws ASCII and Latin-1 of the newest split bundle in four styles at
+  eight terminal cells (4.5 MB, 1.1 s on four threads of a Core
+  i7-6820HQ); the cells, characters and styles are settings, for all
+  bundles or one. A fresh process then has its first 95 ASCII cells at
+  9x18 in 0.2 ms in place of 23 ms, and ASCII and Latin-1 in four styles
+  in 0.33 ms in place of 407 ms. A program must ask the file to gain
+  this; none here does yet. Colour glyphs are not covered.
+  [docs/neuronte-cells.md](docs/neuronte-cells.md).
 - `make test` also makes the files twice and checks them: the same bytes
   each time, every embedded bitmap exactly the library's pixels (15,616
   Sans glyphs and 1,330 Mono cells, none differs), every outline within
-  65 pixels of its net's 8,192, and 67 checks of the setup command.
-- The library and every weight file are unchanged.
+  65 pixels of its net's 8,192, and 95 checks of the setup command. It
+  compares every entry of a cells file with the library bit for bit and
+  opens some 11,000 damaged cells files, also under AddressSanitizer.
+- `src/neuronte.c`, `include/neuronte.h` and every weight file are
+  unchanged.
 
 ## 2.3.0
 

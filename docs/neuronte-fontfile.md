@@ -300,16 +300,20 @@ written for the system cannot be run as a user by accident; a step
 meant for both is put in both. No user step is shipped here: the font
 files are the same for every user and are made once by the system.
 
-Two steps are here, and others can be added beside them without
+Three steps are here, and others can be added beside them without
 changing the command:
 
 | Step | Makes | When |
 |---|---|---|
 | `20-fontfile-sans` | the four Neuronte Sans files | early: before the login screen |
 | `25-fontfile-mono` | Neuronte Mono | afterwards, in the background |
+| `30-cells` | cells files for programs that call the library (`docs/neuronte-cells.md`) | afterwards, in the background |
 
-They are two because a login screen needs a font to exist, not every
-character, and the Sans files take less than half the time of Mono.
+The fonts are two steps because a login screen needs a font to exist,
+not every character, and the Sans files take less than half the time of
+Mono. A step with settings of its own reads them from the same settings
+file, which the command names in `NEURONTE_SETUP_CONF`; the command
+passes over keys it does not know.
 
 ### Install
 
@@ -317,17 +321,21 @@ character, and the Sans files take less than half the time of Mono.
 make
 sudo make install-setup            # PREFIX=/usr SYSCONFDIR=/etc UNITDIR=/usr/lib/systemd/system DESTDIR=
 sudoedit /etc/neuronte/setup.conf  # weights=/where/the/.nrt/files/are
-sudo neuronte-setup                # makes the files now: 6 to 8 s on the machine timed below
+sudo neuronte-setup                # makes the files now: about 9 s on the machine timed below
 sudo systemctl enable neuronte-setup-early.service neuronte-setup.service
 sudo systemctl --global enable neuronte-setup-user.service   # when there are user steps
 ```
 
-`install-setup` puts `neuronte-fontfile` and `neuronte-setup` in
-`/usr/bin`, the two steps in `/usr/lib/neuronte/setup.d`, the settings in
-`/etc/neuronte/setup.conf` (kept when one is there), the fontconfig file
-in `/etc/fonts/conf.d`, the two system units and the user unit, and this
-page. It does not install
-the weights or the library: the settings say where the weights are. An
+`install-setup` puts `neuronte-fontfile`, `neuronte-cells` and
+`neuronte-setup` in `/usr/bin`, the three steps in
+`/usr/lib/neuronte/setup.d`, the settings in `/etc/neuronte/setup.conf`
+(kept when one is there), the fontconfig file in `/etc/fonts/conf.d`,
+the two system units and the user unit, and this page and
+`neuronte-cells.md`. It does not install the weights or the library:
+the settings say where the weights are, and the three commands carry
+the library inside them. A program that is to read cells files needs
+this version's `libneuronte` and `include/neuronte_cells.h`, installed
+wherever that program takes the library from. An
 image build runs the same `neuronte-setup` in the image, so the first
 start of the machine finds the files made.
 
@@ -368,8 +376,10 @@ wait for it. A program that looks before the cache is written reads the
 directory itself, which gives the same answer.
 
 **A normal start** finds the files current. `neuronte-setup --early`
-takes 11 ms and the whole of `neuronte-setup` 14 ms (medians of 20); a
-step's own check is 2.1 ms of that and the rest is starting shells. No
+takes 5 to 11 ms (the medians of 20 were 10.9 ms in one run and 5.5 ms
+in another, an hour apart) and the whole of `neuronte-setup`, three
+steps, 15 ms; a step's own check is 2 ms of that and the rest is
+starting shells. `neuronte-setup --user` with no user step is 4 ms. No
 net is opened and no file is read beyond its size and time. With
 `--verify`, which reads and hashes all 43 MB of weights, a check takes
 190 ms.
@@ -379,8 +389,10 @@ net is opened and no file is read beyond its size and time. With
 Sans files, which holds the login screen back by 1.8 s with the four
 threads of the settings as shipped (3.1 s with two, 5.9 s with one). The
 login screen then has a font. Mono follows in the background,
-about 4 s later (7 s with two threads, 14 s with one), and `fc-cache`
-pauses its 2 s after that. These times are of a machine doing nothing
+about 4 s later (7 s with two threads, 14 s with one), `fc-cache`
+pauses its 2 s after that, and the cells files take 1.1 s more (3.7 s
+with one thread): 7.0 s in all for what follows the login screen, 20 s
+with one thread. These times are of a machine doing nothing
 else; a start with other services running at the same moment was not
 measured and will be slower. Until it is there:
 
@@ -420,9 +432,15 @@ job can do. What it can leave behind is a file.
   default 9x18 cell is 22.6 ms, and ASCII and Latin-1 in the four styles
   (regular, bold, italic, bold italic) 408 ms; in a 7x14 cell 252 ms, in
   10x20 504 ms, in 12x24 719 ms. Kilix 95 already keeps its letters in a file of its own
-  between runs. For the others a file of ready cells, read through a new
-  library call, is proposed and not built: it changes the library's
-  interface, which is not this change's to decide.
+  between runs. For the others there is the **cells file**: the step
+  `30-cells` draws ASCII and Latin-1 in the four styles at the
+  terminals' cells and keeps the floats in a file every process maps,
+  and a program takes a cell from it through
+  `neuronte_cells_find()`. The 23 ms become 0.2 ms and the 408 ms 0.33
+  ms; opening the weight file, 4.7 ms, is still paid by every process.
+  A program has to be changed to ask (about ten lines), and a cell or
+  character the file does not hold costs what it always did.
+  `docs/neuronte-cells.md` has the calls, the settings and the limits.
 
 The strikes are the likely characters at the likely sizes: every
 character of Neuronte Sans at every em from 1 to 32 px, which includes
@@ -434,7 +452,10 @@ Neuronte Mono at the cell sizes of the terminal's font sizes from 7 to
 
 `make test` runs, after the library's own checks:
 
-- `tests/check_setup.sh`: 67 checks of `neuronte-setup` and the two
+- `tests/test_cells.c`, twice, the second time under AddressSanitizer:
+  every entry of a cells file against the library, and damaged files
+  (`docs/neuronte-cells.md`).
+- `tests/check_setup.sh`: 95 checks of `neuronte-setup` and the three
   steps in a directory of its own: nothing made, `--early`, the rest, a
   run when current changes no file, time or directory entry; a touched
   file is current, a changed or removed one is made again as it was; a
@@ -442,7 +463,8 @@ Neuronte Mono at the cell sizes of the terminal's font sizes from 7 to
   directory, is not current; a failing step gives exit 1 and the later
   steps still run; at a start a step may defer and a step that overruns
   is stopped; `--user` keeps its state apart and touches nothing of the
-  system's.
+  system's; the cells step follows its settings, removes what nobody
+  asks for, and writes the same bytes with one thread or several.
 - `tests/check_fontfile.py`: reads the files with a reader of its own
   written from the specification (directory, checksums, `cmap`, `glyf`,
   `hmtx`, `EBLC`, `EBDT`), then: the characters are exactly the nets'; the

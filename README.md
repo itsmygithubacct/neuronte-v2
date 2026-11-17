@@ -76,7 +76,7 @@ and what each cannot do.
 It needs a C compiler and `make`. The check also needs Python 3 with NumPy.
 
 ```sh
-make          # build/libneuronte.so, build/libneuronte.a and build/neuronte-fontfile
+make          # build/libneuronte.so, build/libneuronte.a, build/neuronte-fontfile and build/neuronte-cells
 make demo     # draws four lines of text in the terminal
 make test     # checks every shipped file
 ```
@@ -89,6 +89,10 @@ none on a digit, and every advance must be exact. Today every face has 0.
 And it compares every net's pixels, over a fixed list of characters, and
 lines of text drawn by the two scalable faces, with the values recorded in
 `tests/golden.json` when this set was cut.
+
+It writes a [cells file](docs/neuronte-cells.md), compares every entry
+with the library bit for bit, and opens some 11,000 damaged ones, once
+more under AddressSanitizer.
 
 It then makes the [font files](docs/neuronte-fontfile.md) twice, once
 through `neuronte-setup` and once with another number of threads, and
@@ -159,6 +163,20 @@ last choice for `sans-serif` and `monospace`, after any font that is
 installed. [The page on them](docs/neuronte-fontfile.md) says what the
 files hold, what they lack (kerning, shaping, hinting, a serif face) and
 how each program tried draws them.
+
+## Cells files for programs that call the library
+
+A program that calls the library pays for a character the first time it
+draws it, in every process. `neuronte-setup` also draws ASCII and
+Latin-1 in four styles at the terminals' cells once
+(`build/neuronte-cells`) and keeps the floats in a file every process
+maps. A program takes a cell from it with `neuronte_cells_find()`
+(`include/neuronte_cells.h`, a new part of the library; `src/neuronte.c`
+is unchanged) and from the net when the file does not hold it; the two
+are the same bytes. On a Core i7-6820HQ the first 95 ASCII cells of a
+fresh process at 9x18 take 0.2 ms in place of 23 ms.
+[The page on them](docs/neuronte-cells.md) has the calls, the settings
+and what a cells file does not cover.
 
 ## How it works, briefly
 

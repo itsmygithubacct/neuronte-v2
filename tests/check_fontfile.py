@@ -28,7 +28,7 @@ OpenType specification; no font library is asked what they hold.
 5. With Pillow built on FreeType: FreeType opens each file and gives back
    the strike's pixels for ASCII at three sizes. Skipped, and said so, when
    Pillow is not installed.
-6. The stamps (FONTS_DIR/neuronte-fontfile.stamp, or the setup steps'
+6. The stamps (FONTS_DIR/neuronte-fontfile.stamp, or the font steps'
    beside FONTS_DIR) name every weight file the faces are made from and
    every written file, each with its SHA-256 and size. With SECOND_DIR, a
    second run's files are the same bytes (the generator puts no clock and
@@ -534,7 +534,9 @@ def stamp(folder, names):
     paths = [os.path.join(folder, "neuronte-fontfile.stamp")]
     if not os.path.exists(paths[0]):
         up = os.path.dirname(os.path.abspath(folder))
-        paths = sorted(os.path.join(up, n) for n in os.listdir(up) if n.endswith(".stamp"))
+        # The font steps' stamps: other steps keep stamps there too.
+        paths = sorted(os.path.join(up, n) for n in os.listdir(up)
+                       if n.endswith(".stamp") and "fontfile" in n)
     line = re.compile(r"(weight|output) ([0-9a-f]{64}) (\d+) (\d+\.\d{9}) (\S+)")
     weights, outputs = {}, {}
     for path in paths:
