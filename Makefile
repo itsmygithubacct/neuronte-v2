@@ -56,6 +56,7 @@ test: all build/test_utf8 build/test_api build/test_cells build/test_cells_check
 	./build/test_utf8
 	./build/test_api weights/neuronte-split-v9.nrt --full --accent --pixel
 	OPENBLAS_NUM_THREADS=1 $(PYTHON) tests/check_set.py build/libneuronte.so
+	OPENBLAS_NUM_THREADS=1 $(PYTHON) tests/check_rank.py
 	./build/test_cells weights/neuronte-split-v9.nrt weights/neuronte-term-dingbat-v1.nrt build/cells-test
 	./build/test_cells_checked weights/neuronte-split-v9.nrt weights/neuronte-term-dingbat-v1.nrt build/cells-test
 	sh tests/check_setup.sh build $(TEST_THREADS)

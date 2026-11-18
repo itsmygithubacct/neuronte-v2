@@ -524,6 +524,40 @@ class TwoInk:
         self.masks = self.masks.astype(np.float64)
         self.previous = None
 
+    def rank(self, rgb, k=16, always=None):
+        """Exact shortlist: the k candidates with the least unconstrained error.
+
+        For one cell x (P pixels x 3) and mask m, the best unconstrained
+        background + (foreground - background) * m leaves, per channel,
+        |x - mean x|^2 - <x - mean x, m^>^2, where m^ is m centred and scaled
+        to unit length. So ordering candidates by sum_c <x_c - mean, m^>^2 is
+        ordering them by their unconstrained least-squares error, and one
+        matrix product ranks every candidate of every cell. The box limits
+        (0..255) only raise an error, so fit() then settles the shortlist
+        exactly. Flat masks (space, full block) score 0 here and are added by
+        `always`. No learned guess: the shortlist is the exact unconstrained
+        top k."""
+        if getattr(self, '_unit', None) is None:
+            m = self.masks - self.masks.mean(1, keepdims=True)
+            norm = np.sqrt((m * m).sum(1, keepdims=True))
+            self._unit = np.divide(m, norm, out=np.zeros_like(m), where=norm > 1e-9).astype(np.float32)
+        p = patches(rgb, self.width, self.height)
+        grid = p.shape[:2]
+        x = p.reshape(-1, self.width * self.height, 3).astype(np.float32)
+        x -= x.mean(1, keepdims=True)
+        k = max(1, min(k, len(self.masks)))
+        out = np.empty((len(x), k), np.int64)
+        for start in range(0, len(x), 512):
+            chunk = x[start:start+512]
+            s = np.matmul(self._unit[None], chunk)            # cells x K x 3
+            score = (s * s).sum(2)
+            top = np.argpartition(-score, k - 1, axis=1)[:, :k] if k < score.shape[1] else np.argsort(-score, 1)
+            out[start:start+len(chunk)] = top
+        if always is not None:
+            always = np.asarray(always, np.int64).ravel()
+            out = np.concatenate([out, np.broadcast_to(always, (len(out), len(always)))], 1)
+        return out.reshape(*grid, -1)
+
     def fit(self, rgb, proposals=None):
         p = patches(rgb, self.width, self.height)
         grid = p.shape[:2]

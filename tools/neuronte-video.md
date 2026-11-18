@@ -241,6 +241,21 @@ scaling filter or neural reconstruction. Shared-memory shutdown waits up to
 Known source chroma locations are passed explicitly to ffmpeg's scale filter,
 so subsampled color samples retain the alignment declared by the source.
 
+## Exact shortlist
+
+`TwoInk.rank(rgb, k, always=None)` gives each cell the k candidates with the
+least unconstrained two-colour error, ordered exactly, from one matrix
+product. For a cell x and a mask m, the best unconstrained fit leaves
+|x - mean x|^2 - <x - mean x, m^>^2 in each channel, where m^ is m centred
+and scaled to unit length. So ranking by the sum over channels of
+<x - mean x, m^>^2 is ranking by that error. The colour limits (0..255) can
+only raise an error, so `fit(rgb, rank(rgb, k))` then settles the shortlist
+with the bounded fit. Flat masks (space, full block) score 0 in the ranking;
+pass them in `always`. Nothing is learned and nothing is guessed: with a
+shortlist of every candidate, the fit has the same error in every cell and
+draws the same pixels as the full search (`tests/check_rank.py`, which also
+checks the ranking against each candidate's own normal equations).
+
 ## Learned helpers
 
 The learned speed and quality helpers of Neuronte 0.1.x are not in this
