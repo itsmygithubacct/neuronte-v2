@@ -1,5 +1,20 @@
 # Changes
 
+## 2.5.1
+
+- **The Sans files are made in the background at a start.** `early=`
+  is `10-backend` as shipped, without `20-fontfile-sans`: a first start
+  no longer holds the login screen back while the Sans files are made.
+  `neuronte-setup.service` makes them after the login screen has
+  started, before Mono; until then the other fonts installed are used, as
+  the fontconfig file already prefers them. A machine with no other font
+  puts the step back with `early=10-backend,20-fontfile-sans`.
+  `tests/check_setup.sh` checks that `--early` makes no font file as
+  shipped, and that the setting makes it make the Sans files.
+- No weight file, drawing, `src/` or `include/` file changes: the set is
+  the 66 files of 2.5.0. Only `system/`, its documentation and its test
+  change.
+
 ## 2.5.0
 
 - **All of Latin-1 in every desktop face, at every size.** The 33
@@ -37,16 +52,8 @@
   strike below 17 px. `neuronte-fontfile` takes the newest face of each
   name and is unchanged. The four Sans files are 866,856 bytes, from
   646,684, and take 2.38 s to make with four threads on a Core i7-6820HQ,
-  from 1.76 s. Neuronte Mono is unchanged.
-- **The Sans files are made in the background at a start.** `early=`
-  is `10-backend` as shipped, without `20-fontfile-sans`: a first start
-  no longer holds the login screen back while the Sans files are made.
-  `neuronte-setup.service` makes them after the login screen has
-  started, before Mono; until then the other fonts installed are used, as
-  the fontconfig file already prefers them. A machine with no other font
-  puts the step back with `early=10-backend,20-fontfile-sans`.
-  `tests/check_setup.sh` checks that `--early` makes no font file as
-  shipped, and that the setting makes it make the Sans files.
+  from 1.76 s, which is what a first start holds the login screen back
+  by. Neuronte Mono is unchanged.
 - `make test` draws all 192 characters of every face against its
   drawing (11,520 letters, none wrong), and compares 23,808 Sans strike
   glyphs with the library's pixels. In `tests/golden.json` the entries of
