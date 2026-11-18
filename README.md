@@ -6,12 +6,15 @@ file, no glyph table and no bitmap atlas behind it. The weights are the
 font.
 
 This repository is **Neuronte 2**, the slim set: the C library and one
-packed net for each job, and nothing else. It is 34 MB. The full project,
+packed net for each job, and nothing else. Its weights are 72 MB. The full project,
 with the training code, every generation of every net and the measurements
 behind them, is [Neuronte 0.1.x](https://github.com/itsmygithubacct/neuronte).
-Every net is a file of [Neuronte 0.1.6](https://github.com/itsmygithubacct/neuronte/tree/v0.1.6),
-copied byte for byte under the same name, and the library is 0.1.6's
-source.
+Every net is a file of Neuronte, copied byte for byte under the same name:
+the 33 desktop faces of 2.5.0 are files of Neuronte at commit
+[bfd0a2d](https://github.com/itsmygithubacct/neuronte/tree/bfd0a2d066161eaa5abeae9747e151ff345702ef),
+which no Neuronte tag holds yet, and every other net is a file of
+[Neuronte 0.1.6](https://github.com/itsmygithubacct/neuronte/tree/v0.1.6).
+The library is 0.1.6's source.
 [CHANGES.md](CHANGES.md) lists what each version added.
 
 ![The same ten lines, 8 to 48 px, drawn by Neuronte 2.1 and by DejaVu Sans](docs/neuronte-2.1-and-dejavu.png)
@@ -51,10 +54,10 @@ hundred lines, and shows the whole of the text interface.
 | 1,864 more terminal characters, in four bundles opened beside the first: more Latin and Greek letters, arrows and math operators, technical and geometric signs, dingbats | `neuronte-term-latin-v1.nrt`, `neuronte-term-math-v1.nrt`, `neuronte-term-symbol-v1.nrt`, `neuronte-term-dingbat-v1.nrt` | [more characters](#more-terminal-characters) |
 | 1,714 more terminal characters, in six bundles opened the same way: more Latin, Greek and Cyrillic letters, hexagrams, dominoes and cards, mathematical alphabets, Canadian syllabics, Lisu, Hebrew, Lao, faces and moons | `neuronte-term-letters-v1.nrt`, `neuronte-term-blocks-v1.nrt`, `neuronte-term-mathalpha-v1.nrt`, `neuronte-term-syllabics-v1.nrt`, `neuronte-term-scripts-v1.nrt`, `neuronte-term-rest-v1.nrt` | [more characters](#more-terminal-characters) |
 | The symbols of a terminal's own bars: one cell, two cells, and nine weather symbols in colour | `neuronte-kilix-chrome-v1.nrt`, `neuronte-kilix-chrome-v2.nrt`, `neuronte-weather-colour-v1.nrt` | [bar symbols](#symbols-for-a-terminals-bars) |
-| Desktop text, 1 to 16 px, upright | `neuronte-ui1-v1.nrt` to `neuronte-ui16-v1.nrt` | [faces](#desktop-faces) |
-| Desktop text, 3 to 16 px, italic | `neuronte-ui3-italic-v1.nrt` to `neuronte-ui16-italic-v1.nrt` | [faces](#desktop-faces) |
-| Desktop text, 17 to 32 px, upright and italic | `neuronte-ui-scaled-latin1-v0.nrt`, with `neuronte-ui-scaled-latin1-italic-advances-v0.nrt` | [scaled face](docs/neuronte-ui-scaled-v0.md) |
-| Desktop text above 32 px | `neuronte-ui-large-latin1-v1.nrt` | [large face](docs/neuronte-ui-large-v1.md) |
+| Desktop text, 1 to 16 px, upright: ASCII, the ellipsis and all of Latin-1 | `neuronte-ui1-v2.nrt` to `neuronte-ui16-v2.nrt` | [faces](#desktop-faces) |
+| Desktop text, 3 to 16 px, italic | `neuronte-ui3-italic-v2.nrt` to `neuronte-ui16-italic-v2.nrt` | [faces](#desktop-faces) |
+| Desktop text, 17 to 32 px, upright and italic | `neuronte-ui-scaled-latin1-v1.nrt`, with `neuronte-ui-scaled-latin1-italic-advances-v1.nrt` | [scaled face](docs/neuronte-ui-scaled-v0.md) |
+| Desktop text above 32 px | `neuronte-ui-large-latin1-v2.nrt` | [large face](docs/neuronte-ui-large-v1.md) |
 | 300 colour emoji | `neuronte-emoji-v1.nrt` | [emoji-v1][emoji] |
 | 167 colour icons | `neuronte-icon-v2.nrt` | [icon-v2][icon] |
 | The Kilix flame | `neuronte-flame-v1.nrt` | [flame-v1][flame] |
@@ -124,12 +127,12 @@ neuronte_close(font);
 
 Desktop text is drawn a line at a time, with each letter's own width. Open
 the face for the size you want and draw at that size (from 17 px the file
-is `neuronte-ui-scaled-latin1-v0.nrt` for every size to 32, and above that
-`neuronte-ui-large-latin1-v1.nrt`):
+is `neuronte-ui-scaled-latin1-v1.nrt` for every size to 32, and above that
+`neuronte-ui-large-latin1-v2.nrt`):
 
 ```c
 neuronte *face;
-neuronte_open_file("weights/neuronte-ui14-v1.nrt", &face);
+neuronte_open_file("weights/neuronte-ui14-v2.nrt", &face);
 neuronte_set_binary(face, 1);            /* crisp pixels, as the face was drawn */
 int w = neuronte_text_width(face, "Hello", 5, 0 /* bold */, 14);
 neuronte_draw_text(face, pixels, stride, width, height,
@@ -203,29 +206,34 @@ times faster than Neuronte 0.1.1 at the same pixels. More:
 
 Each size from 1 to 16 px has its own net, because each small size is its
 own hand-placed pixel design and not one shape scaled. A net reproduces its
-size exactly; no net draws another size's design.
+size exactly; no net draws another size's design. Every face, at every
+size, draws the same 192 characters: printable ASCII, the ellipsis and all
+96 of Latin-1, U+00A0 to U+00FF (`é`, `ñ`, `ß`, `£`, `±`, `×`, `©`, `«`
+and the rest). The soft hyphen, U+00AD, is drawn as a hyphen; a program
+that hides soft hyphens does so before it draws.
 
-From 17 to 32 px one file, `neuronte-ui-scaled-latin1-v0`, draws every size from
+From 17 to 32 px one file, `neuronte-ui-scaled-latin1-v1`, draws every size from
 one design, the strokes the hand faces were first fitted to. The library
 snaps its straight stems to whole pixels, so a stem is exactly 2 px wide
 from 17 to 26 px, and it draws black and white like the small faces. It is
 a different face from the hand-drawn ones it replaced, not a copy: against
 them about a third of the letter widths differ, by at most 2 px, and the
 shapes differ by some tens of pixels a letter. In exchange one 2.5 MB file
-does the work of 32 files of 17.4 MB, and it adds the 58 accented letters
-of Latin-1 (U+00C0 to U+00FF: `é`, `ñ`, `ü`, `ß` and the rest), each a
-letter of the face with a mark placed over it. The sizes from 1 to 16 px
-have no accented letters. Italic is the same letters sheared as
+does the work of 32 files of 17.4 MB. It draws all of Latin-1: the 58
+accented letters, each a letter of the face with a mark placed over it,
+and the other 38 (signs, ligatures, fractions, `ß`, `Æ`, `Ð`, `Þ` and the
+rest) drawn as strokes from their Unicode names and the face's own
+letters ([card of the 38][signs]). Italic is the same letters sheared as
 they are drawn (`NEURONTE_STYLE_ITALIC`), stepped by the advances in
-`neuronte-ui-scaled-latin1-italic-advances-v0`; `demo/neuronte-say.c` shows how.
+`neuronte-ui-scaled-latin1-italic-advances-v1`; `demo/neuronte-say.c` shows how.
 [Its card](docs/neuronte-ui-scaled-v0.md) has the measurements for every
 size. Scaled below 17 px the design is not good enough to ship, and below
 10 px it is not legible, which is why the small sizes stay hand-drawn.
 
-Above 32 px one file, `neuronte-ui-large-latin1-v1`, draws any size with smooth
+Above 32 px one file, `neuronte-ui-large-latin1-v2`, draws any size with smooth
 edges. It is the face of `neuronte-ui-large-v0` cut into four smaller nets,
 about 13 times as fast the first time a size is used, with the same
-Latin-1 letters added by two more nets. It did not
+Latin-1 characters added by four more nets. It did not
 meet the accuracy limit set for it before it was trained (it is behind the
 old net at 32 px, a size it is not used for, and on its worst letter at 48
 and 96 px) and ships by the owner's decision;
@@ -238,10 +246,20 @@ recipe, the acceptance rule and the measured speed of every face in it:
 |---|---|
 | 1 to 15 px; italics 3 to 12, 14 and 15 px | [small faces][faces-small] |
 | 16 px; italics 13 and 16 px | [narrower single nets][faces-192-256] |
+| Latin-1 of every face from 1 to 16 px, upright and italic, beside those nets | [pixel faces v2][faces-v2] |
+| The 38 Latin-1 signs of the scaled and large faces | [Latin-1 signs][signs] |
+
+Each `-v2` face is its `-v1` file's nets, unchanged, and new nets for the
+96 Latin-1 characters, so its ASCII draws byte for byte as before; every
+one of the 192 characters is exactly its drawing at the native em, regular
+and bold, with both seeds, and `make test` checks the shipped files again.
+Below 8 px a face has too few pixels to tell every Latin-1 character
+apart, and some share a bitmap with another; the card lists them.
 
 A desktop also needs to know where a face sits in its cell and how wide
 each letter is. `font/ui-tops.json` gives the first, and each
-`font/ui-EM.txt` holds that size's advances and pixels.
+`font/ui-EM-latin1.txt` (italic `font/ui-EM-latin1-italic.txt`) holds that
+size's advances and pixels.
 
 ## More terminal characters
 
@@ -347,9 +365,14 @@ picture then differs from the drawing by 4 to 6 of 255 on average.
 
 - The older files: `neuronte-split-v5`, the `-v0` desktop faces and the
   rest. A program that used them names the files above instead.
-- The hand-drawn faces from 17 to 43 px. `neuronte-ui-scaled-latin1-v0` and
-  `neuronte-ui-large-latin1-v1` cover those sizes; the hand-drawn ones are in
+- The hand-drawn faces from 17 to 43 px. `neuronte-ui-scaled-latin1-v1` and
+  `neuronte-ui-large-latin1-v2` cover those sizes; the hand-drawn ones are in
   Neuronte 0.1.x and in Neuronte 2.1.0.
+- The ASCII-only faces of 2.4.0 (`neuronte-uiN-v1`, `neuronte-uiN-italic-v1`,
+  `neuronte-ui-scaled-latin1-v0` with its italic advances `-v0`, and
+  `neuronte-ui-large-latin1-v1`) and their drawings `font/ui-N.txt` and
+  `font/ui-N-italic.txt`. The files that replace them draw the same ASCII
+  pixels; they are in Neuronte 2.4.0 and in Neuronte 0.1.x.
 - The learned video helpers. They are tied to `neuronte-split-v5`, so the
   player here has no `--helper` option, and its cells mode draws with
   `neuronte-split-v9`.
@@ -386,3 +409,5 @@ built with `make media`, links FFmpeg; see
 [pointer]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-pointer-v1.md
 [faces-small]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-v1-small.md
 [faces-192-256]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-v1-192-256.md
+[faces-v2]: https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-v2.md
+[signs]: https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-latin1-signs-v0.md

@@ -1,5 +1,66 @@
 # Changes
 
+## 2.5.0
+
+- **All of Latin-1 in every desktop face, at every size.** The 33
+  desktop files are replaced by files that draw printable ASCII, the
+  ellipsis and all 96 characters from U+00A0 to U+00FF, 192 characters:
+  `neuronte-ui1-v2` to `neuronte-ui16-v2` and `neuronte-ui3-italic-v2` to
+  `neuronte-ui16-italic-v2` in place of the `-v1` faces, which drew ASCII
+  only; `neuronte-ui-scaled-latin1-v1` with
+  `neuronte-ui-scaled-latin1-italic-advances-v1` in place of their `-v0`,
+  and `neuronte-ui-large-latin1-v2` in place of `-v1`, which drew the 58
+  accented letters but not the other 38 (`£ ± × ÷ ß Æ ø § © « »` and the
+  rest). Each new file is the file it replaces with nets added beside its
+  nets, which are unchanged, so ASCII draws byte for byte as before at
+  every size, and so do the 58 accented letters from 17 px up. A program
+  that opened the old names opens the new ones instead.
+- Every new face from 1 to 16 px is exactly its drawing, all 192
+  characters, regular and bold, at its size: the gate was set before
+  training, both seeds passed it, and six faces passed only after one or
+  two groups of four characters were split in two, as declared. No
+  character is left out. Below 8 px some characters share a bitmap with
+  another; the [card of the faces](https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-v2.md) lists them. The
+  38 of the scaled and large faces passed their limits with both seeds;
+  [their card](https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-latin1-signs-v0.md) gives the numbers. The
+  soft hyphen, U+00AD, is drawn as a hyphen.
+- The drawings of the faces from 1 to 16 px are now
+  `font/ui-N-latin1.txt` and `font/ui-N-latin1-italic.txt`, in place of
+  `font/ui-N.txt` and `font/ui-N-italic.txt`: the same ASCII glyphs, byte
+  for byte, and the 96 of Latin-1. The advance tables of the scaled and
+  large faces are `font/ui-scaled-latin1-full-advances.txt`,
+  `font/ui-scaled-latin1-full-italic-advances.txt` and
+  `font/ui-large-latin1-full-advances.txt`, the earlier tables with the
+  38 added.
+- **Neuronte Sans has 192 characters**, from 154, each with a strike at
+  every size from 1 to 32 px (3 to 32 px italic), where Latin-1 had no
+  strike below 17 px. `neuronte-fontfile` takes the newest face of each
+  name and is unchanged. The four Sans files are 866,856 bytes, from
+  646,684, and take 2.38 s to make with four threads on a Core i7-6820HQ,
+  from 1.76 s, which is what a first start holds the login screen back
+  by. Neuronte Mono is unchanged.
+- `make test` draws all 192 characters of every face against its
+  drawing (11,520 letters, none wrong), and compares 23,808 Sans strike
+  glyphs with the library's pixels. In `tests/golden.json` the entries of
+  the 33 replaced files are renamed; for 32 of them the coverage hash and
+  the number of nets change, because the list of characters it hashes
+  holds eight of Latin-1 (U+00A0, U+00A3, U+00B1, U+00B2, U+00BC, U+00C9,
+  U+00E9, U+00F1): the faces from 1 to 16 px did not draw any of them,
+  and the scaled and large faces did not draw the four signs. Every other character of that list draws as before, and the
+  advance and text hashes, which are of ASCII, are unchanged; so is every
+  entry of the files that are not desktop faces.
+- Each new file is a file of Neuronte at commit
+  [bfd0a2d](https://github.com/itsmygithubacct/neuronte/tree/bfd0a2d066161eaa5abeae9747e151ff345702ef);
+  every other file is unchanged from 2.4.0. `src/` and `include/` are
+  unchanged. The set is 66 weight files, 72,026,486 bytes, from 66 and
+  56,148,762.
+- Documents: [docs/neuronte-and-dejavu.md](docs/neuronte-and-dejavu.md)
+  now describes the set as it is, not 2.1.0's; and
+  [docs/neuronte-fontfile.md](docs/neuronte-fontfile.md) no longer says
+  that Hebrew is in no net (Neuronte Mono has 36 characters of the Hebrew
+  block, 45 Hebrew presentation forms and 39 Lao characters, from
+  `neuronte-term-rest-v1`).
+
 ## 2.4.0
 
 - **1,714 more terminal characters**, 4,919 with `neuronte-split-v9` and

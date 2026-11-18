@@ -95,205 +95,205 @@
   "list_sha256": "27d444b89b50fd7effb4adfdfecab4c65fe17ed7bb5e94e84c36100139b84f93",
   "nets": 49
  },
- "neuronte-ui-large-latin1-v1.nrt": {
+ "neuronte-ui-large-latin1-v2.nrt": {
   "advance_sha256": "a9a85d2bee116caeb6a874103acecca12ccde4f11253384a69f510d4c329cad5",
-  "coverage_sha256": "7171a7c06d6993a41639112fc083526c72b6ca2a59c72d38f41a1610488582c6",
+  "coverage_sha256": "2ea58f36106a92bca7a88e6ad3bca28ad696cad5d9198e9c3901812c016abe8c",
   "layers": 1,
-  "nets": 6,
+  "nets": 8,
   "text_sha256": "1c6863845c4a7925026ed1c013c45a1858804958e5f848a93cecfc1eccc518bc"
  },
- "neuronte-ui-scaled-latin1-italic-advances-v0.nrt": {
+ "neuronte-ui-scaled-latin1-italic-advances-v1.nrt": {
   "advance_sha256": "918fcc2e5577b00b9ec2776a786860416e728bfdedf621fbcc7c268bc316d46f",
   "coverage_sha256": "01b9b6dcbfa8fee4aeb47235ba62a52b5cbaa6220596a9ff873b20d89a297b14",
   "layers": 1,
   "nets": 0
  },
- "neuronte-ui-scaled-latin1-v0.nrt": {
+ "neuronte-ui-scaled-latin1-v1.nrt": {
   "advance_sha256": "2a1b9a0ff9bb112b33f8f3413d3013d7c4ee21ddae6076cdd5d7406fe3d3980d",
-  "coverage_sha256": "6b9ca6a0fc455f014382691e7c50f1882d56758b5a08caf01435d4ebdf58a5c8",
+  "coverage_sha256": "9b0d95a172368cbd5c535d6cec3e901badbc7b9c4297d7c39ad5616112c260b7",
   "layers": 1,
-  "nets": 18,
+  "nets": 20,
   "text_sha256": "9a8993f9ac248af4f984060ec1333673fe4cec3e4d2c06d675bc4029174723e8"
  },
- "neuronte-ui1-v1.nrt": {
+ "neuronte-ui1-v2.nrt": {
   "advance_sha256": "30f1e0fcc294593c36b4ff9ddb051b3e13f8edddd3fd577f4ac35ed10ddf52a5",
-  "coverage_sha256": "696942e91418258c560aad18a1f80387fccea326ceddf62d04c894fadaa12135",
+  "coverage_sha256": "0634ea467b058bc9192cfbeed666cb44b7110028cdbefc71d1711b0e4e9831b6",
   "layers": 1,
-  "nets": 1
+  "nets": 2
  },
- "neuronte-ui10-italic-v1.nrt": {
+ "neuronte-ui10-italic-v2.nrt": {
   "advance_sha256": "e101ebeb00c66ac9888c5da3c0de695ec3bdfdc21ea0fea4f2f53b272566e860",
-  "coverage_sha256": "dbc4388eb5472eb0c72a46ee8415348b6e2f50ce9c197f3f532b2fce27388659",
+  "coverage_sha256": "efa29470760af68480c174875b73b8a51d07e1336018916ea82c585415d76489",
   "layers": 1,
-  "nets": 96
+  "nets": 121
  },
- "neuronte-ui10-v1.nrt": {
+ "neuronte-ui10-v2.nrt": {
   "advance_sha256": "85bb8736ea00342cd1739a02025b6ce9892ea8a48c3c34c96e10439b20cde1fb",
-  "coverage_sha256": "4d181de4f184f26f7de74558735091cb30c2457591c02348dce8969eacb7d36a",
+  "coverage_sha256": "960412b30b81804b7fe0a5c73ce44f3f38a0f82a16c43cd8f85cc901e5c4e36f",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui11-italic-v1.nrt": {
+ "neuronte-ui11-italic-v2.nrt": {
   "advance_sha256": "f63dd6b1b810ce0d343963608ba21f2c126a221588b52f2c5919b1f8fc81f787",
-  "coverage_sha256": "44a8e6be9ed95b4634b85c3952453455457517698e150851aec9a981d6d15766",
+  "coverage_sha256": "bf9d0b82efa744fb34d49a2e88835e16b10ac4ee9e5dbd08cda1be8c7a6e996c",
   "layers": 1,
-  "nets": 96
+  "nets": 121
  },
- "neuronte-ui11-v1.nrt": {
+ "neuronte-ui11-v2.nrt": {
   "advance_sha256": "84312a270a4d0f50b72a726298d4b2b11077263e38fe211d01b2460d8b590582",
-  "coverage_sha256": "4539a9b3e54b1370891825f650c29c7b14a6290c07eb70330a994ab4a8f76620",
+  "coverage_sha256": "6b2e328b512b74ce6bb93bb827808f40a7976ad2e37e90ac459128a20ebd1490",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui12-italic-v1.nrt": {
+ "neuronte-ui12-italic-v2.nrt": {
   "advance_sha256": "7d7dc4b3b2dfa251e30aa8a613dc3ab12b1afbb6dd9d333a4252ff4bade10860",
-  "coverage_sha256": "4abbe3b099d46b8d7dd175f8903ab685f4a1d641dceab58d47cd35327a257f3d",
+  "coverage_sha256": "745a5ccb9ff09eee8c3f1d04c7fbae08d93b823ede47f8ad1b0b43b07c653997",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui12-v1.nrt": {
+ "neuronte-ui12-v2.nrt": {
   "advance_sha256": "28603455a2aeede63973d84dcb8388f8031e74ecd5760effb6d1f701193d114c",
-  "coverage_sha256": "7ec0f612e6570ef719718cf26e75e0ce26904105e9e423c445d1ff186a411758",
+  "coverage_sha256": "ef6f840190a212a55116e3a0ce7675f06307bd19588f3ad739010bf28c115390",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui13-italic-v1.nrt": {
+ "neuronte-ui13-italic-v2.nrt": {
   "advance_sha256": "40428382c990d43496480e8e92f04776bc0818d052c87b525581d6a2b0204ef6",
-  "coverage_sha256": "4a98bdbc93b0b4f6c3188b521a06b592bd453d2a1b6d0b50d3978dbe4fad577a",
+  "coverage_sha256": "ebca77512b9c7e6f2dda2b82a6c0a5905aea4e4fe3f1fdcbfb159bd78a903ae0",
   "layers": 1,
-  "nets": 1
+  "nets": 26
  },
- "neuronte-ui13-v1.nrt": {
+ "neuronte-ui13-v2.nrt": {
   "advance_sha256": "2943ce96d6e40495eaf535fa09675d22172dd712fde7aebc0c948081ad8549b1",
-  "coverage_sha256": "e4a882594da7a622cf429c5487a378c081f8875edcbf17b48e2f0c82194ee732",
+  "coverage_sha256": "dac2aaaa201be3d34f26c43fdd7d50f9682c6d755d339d960ff95ce357f0db0a",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui14-italic-v1.nrt": {
+ "neuronte-ui14-italic-v2.nrt": {
   "advance_sha256": "035f986416073385f60b66e55b3f0b4a8899610849e098bf66c7eb4facb79306",
-  "coverage_sha256": "3285a34e210b8c5033c87a991f8a7bb4756a0dfcad423ba0a9eda54ac264fcb6",
+  "coverage_sha256": "116623dd432171db9ece8791c00fbad3f382ab4e7f34a5387846874ee418718c",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui14-v1.nrt": {
+ "neuronte-ui14-v2.nrt": {
   "advance_sha256": "6366a7ac8880af429469d709bea897d13ee663090456d3f4c37922232486c84c",
-  "coverage_sha256": "ecadcb7b7cc9dc07a59eb99688fb640fdb133dbaea2f18879563e3e191076cb9",
+  "coverage_sha256": "e160e7c408fe4c381263e374b080473b162c07ba7c6f596183e6f6a55aead8da",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui15-italic-v1.nrt": {
+ "neuronte-ui15-italic-v2.nrt": {
   "advance_sha256": "20ac147b065a525a8d7faed5c799962050a094769148efea915eb35baa7a779f",
-  "coverage_sha256": "9fee9e68606bd96b68805e41b66bbf6fef69aa33b25cba28b4e2e1c852014c06",
+  "coverage_sha256": "d77d4a09a422e3a03b8989d8bec2dcd2118227730a4633a47c0a4473f1733b1c",
   "layers": 1,
-  "nets": 96
+  "nets": 122
  },
- "neuronte-ui15-v1.nrt": {
+ "neuronte-ui15-v2.nrt": {
   "advance_sha256": "c2513e84323e3a740904631ecc2a8d760203a792ba895d860e869d3b896dc431",
-  "coverage_sha256": "738d371f37f789dd8c8ef4040317923bf1e552ff95640fc9216b450aef9eb623",
+  "coverage_sha256": "4c1673cb78b5661ed7c98387165e201f460dea20335151167c581dbe15fa2d34",
   "layers": 1,
-  "nets": 96
+  "nets": 121
  },
- "neuronte-ui16-italic-v1.nrt": {
+ "neuronte-ui16-italic-v2.nrt": {
   "advance_sha256": "5e2bbe40ed6ad602d89e436751a343ac57ce662e3456a42adbdb322bde2fcd6f",
-  "coverage_sha256": "8b52e8b421ebb50bac4ac126d8d3c6715942fc9f8b6c2acbf91c2ecdde7a2f91",
+  "coverage_sha256": "9107a334c2110b48017bff7f9349b53ed606adae99d59683d3c78d1bad9b4305",
   "layers": 1,
-  "nets": 1
+  "nets": 25
  },
- "neuronte-ui16-v1.nrt": {
+ "neuronte-ui16-v2.nrt": {
   "advance_sha256": "1cd60459af13b84db83813243065e8b007269d14cf58d987a3f25323f1f12ec3",
-  "coverage_sha256": "952b21d7745113cab5f95bafad60cc6cdda973313732b37c558df26122419e8d",
+  "coverage_sha256": "103bc3c1d294bff5a71a884b8d073b25ef5c0c94f14ad8799a9896bc90158d91",
   "layers": 1,
-  "nets": 1
+  "nets": 26
  },
- "neuronte-ui2-v1.nrt": {
+ "neuronte-ui2-v2.nrt": {
   "advance_sha256": "aa2809311449142d3da9a394dd90c1c3f209edd00f50a2695582e8addb7593b0",
-  "coverage_sha256": "bdff4ed13fd30d4488048d9a393ae30c64f46d6675052d4bceb087590ea7d018",
+  "coverage_sha256": "baeaea19cb27a5f5cc5d88f6f44a62c16b20f12babe5d2742dab20a8e91aaa72",
   "layers": 1,
-  "nets": 1
+  "nets": 2
  },
- "neuronte-ui3-italic-v1.nrt": {
+ "neuronte-ui3-italic-v2.nrt": {
   "advance_sha256": "4cca8592c3277601e650134d063a4fc724c1befaca8da66c0755eab44c28923f",
-  "coverage_sha256": "41763d321891fb308222ae36ee154ffe05230cf72e3dd5f2f81f889eeedbf30f",
+  "coverage_sha256": "25f84f37968ed7c0623eccda666117c4670cf0e399e8f9a75331d3020ca827eb",
   "layers": 1,
-  "nets": 32
+  "nets": 56
  },
- "neuronte-ui3-v1.nrt": {
+ "neuronte-ui3-v2.nrt": {
   "advance_sha256": "01e6bfe46be56d3f0fbdf86f5aa687fff475acd5813ddbc680a802d6f89e0d67",
-  "coverage_sha256": "56c465bd292ef400c0c5ada8081f741e2bfd61a8917d917413ba3b2e6523ffc5",
+  "coverage_sha256": "7da2c5256be1b9032685aadae3fd4f0bbcbdc16547fb9e25dda6d10eaf7c4d95",
   "layers": 1,
-  "nets": 32
+  "nets": 56
  },
- "neuronte-ui4-italic-v1.nrt": {
+ "neuronte-ui4-italic-v2.nrt": {
   "advance_sha256": "58dab46150a5e5d4d1429b72e987502642c413476bdcda8c8857d14aa7822282",
-  "coverage_sha256": "05555baa84fc6c016a1aa2ec4cacf0ff4824346a61f83b5eeded63fc7513e718",
+  "coverage_sha256": "5aa01e855947d209d04451c9f949d3774df68235f880fda344ae8c4cefe376c6",
   "layers": 1,
-  "nets": 32
+  "nets": 56
  },
- "neuronte-ui4-v1.nrt": {
+ "neuronte-ui4-v2.nrt": {
   "advance_sha256": "3ba66dbfeb3346df92ccc5fa4f23389f9853eaeb0bd928ba4ceae4ed0f384ad6",
-  "coverage_sha256": "fc68b228932b58bedbe1b7df54d01f742d81e2d842d8685d7b81af6bc3fd6b4d",
+  "coverage_sha256": "872888745ce1225feb36c0f9299fe0c749acbd5047f0d6d7f39b3082127b9082",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui5-italic-v1.nrt": {
+ "neuronte-ui5-italic-v2.nrt": {
   "advance_sha256": "33ea7c8a5a42f7c80718fc3e3e0c7a777a830b9f2c40a0983a79dc4da1d2d3f3",
-  "coverage_sha256": "904be3033bd273a3feff557277aefe24403de044778ea1213ae39ee41e0baf52",
+  "coverage_sha256": "76bcaf21065fb2323aa2591c71c812af509f3d48e8a6e1e726bbdc9791a365cf",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui5-v1.nrt": {
+ "neuronte-ui5-v2.nrt": {
   "advance_sha256": "7a9c531464f3acdc5437cd429a949cb66adc49524297adb8d3077e7f3542bae3",
-  "coverage_sha256": "7ae7127c05128e081a31accbda2473c40a4e9fe41547b5f640a5dad54dadd145",
+  "coverage_sha256": "a093f5fcf13e8e13a9556909ab264e1d17a954e150f99911c25d67d5a204fc45",
   "layers": 1,
-  "nets": 32
+  "nets": 56
  },
- "neuronte-ui6-italic-v1.nrt": {
+ "neuronte-ui6-italic-v2.nrt": {
   "advance_sha256": "64c0fd9e20752d45ee73a86e2ecefdf564122569d2a0d639adeb37750ce02c19",
-  "coverage_sha256": "cd118ffd359df22a4ec92ba56c35c2e45278acdfd4f401098cf99b1ed6dcdb7f",
+  "coverage_sha256": "a3b5bec543f0c178cecd2d7993d4c0ecc3965aa94922aab1edee08448c1dc01b",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui6-v1.nrt": {
+ "neuronte-ui6-v2.nrt": {
   "advance_sha256": "0eff499d9cf23756a53aca3bca6e97f654df5b739081993c602ea9db45f8386f",
-  "coverage_sha256": "a922107f1258e3c475ca4935fd04a4a8bcfc47a0903ed00e555e5a63db6c5661",
+  "coverage_sha256": "0394ba50caee0030a0c26f05a7974b3df2e998f96b2aa8986e12810a7bb62c32",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui7-italic-v1.nrt": {
+ "neuronte-ui7-italic-v2.nrt": {
   "advance_sha256": "dbfc0d8102aa135a480b7975a337668e4645b2d77be8839164ce23952170b460",
-  "coverage_sha256": "150e83ff3eaa494fadfc46e4c537aa56a152ceaf1bc2d985fae2d84bd5f10d09",
+  "coverage_sha256": "211d840d9c7d3a7c60e82b494995334abd6a21c88b92ec6056f9eedbd9816f98",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui7-v1.nrt": {
+ "neuronte-ui7-v2.nrt": {
   "advance_sha256": "767a6b20def5b8d636dc37002b78fe4a194a01e3151f24622b359ab468b4b4c4",
-  "coverage_sha256": "df07e7f2afbb123f6e379df94295b4a7d9a77936ec9700f3a763b942508b8055",
+  "coverage_sha256": "53abc37444edf7e6c1735d2b1d7180a59c259d28a3a042f509a4700af583e3e9",
   "layers": 1,
-  "nets": 32
+  "nets": 56
  },
- "neuronte-ui8-italic-v1.nrt": {
+ "neuronte-ui8-italic-v2.nrt": {
   "advance_sha256": "0b3ea9662329059c541628263eec28acde8e9e8a1848024a12e1960afa5d1d3d",
-  "coverage_sha256": "5e2715db05f6a99af1db8f595b06ef5c0a4b035bde0087010077a0cacf336c6e",
+  "coverage_sha256": "fb49d15767ba0e0ebad2b29e360a66e14e24d495672969bbd1582f8282540bce",
   "layers": 1,
-  "nets": 32
+  "nets": 56
  },
- "neuronte-ui8-v1.nrt": {
+ "neuronte-ui8-v2.nrt": {
   "advance_sha256": "f25fad2053c043f9ee4cb03a6b3bbd7b2ba5bdb4a8dbf4deeba74627a3b08c10",
-  "coverage_sha256": "dcd4c445a2dd4addfc72958de62ab1581f86fb0333e408040088df80140b964d",
+  "coverage_sha256": "2c35c57bfd6e4d3c5115c44ae4d7f7ceeea2c86dd9d8a86ac9afff20201d47b3",
   "layers": 1,
-  "nets": 32
+  "nets": 56
  },
- "neuronte-ui9-italic-v1.nrt": {
+ "neuronte-ui9-italic-v2.nrt": {
   "advance_sha256": "3b431b56db649765d89a80e07e72a9ad251274ec39599efe4e2eddd8d15427ad",
-  "coverage_sha256": "cf8890176f9669770577ef162c64160b6e5e2423c84cc7f0d7285beb0e57210c",
+  "coverage_sha256": "e8cb39d4fffde3f2803a47988defc1a703ef9860606ae92f4699062fc7493aec",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
- "neuronte-ui9-v1.nrt": {
+ "neuronte-ui9-v2.nrt": {
   "advance_sha256": "41399fb5eb2b8abc69cce4e9a9ac5a434619adc1f53050256cf11cd57aa5374e",
-  "coverage_sha256": "2270a4890489a560d6401ee26495ce6fc282068af763bdcfade58445b77c4f7f",
+  "coverage_sha256": "d11912b8d7ad6a55787347d1765dfb745289cd9a4ee468bbb23580f533ed7e4f",
   "layers": 1,
-  "nets": 96
+  "nets": 120
  },
  "neuronte-video-masks-v0.nrt": {
   "coverage_sha256": "5cf6afaa6bc9048a05f18ca52825853b3d0c1061ad5d7ddc1da3964020cc89de",

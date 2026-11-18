@@ -270,11 +270,11 @@ expect 1 "a cells file with another time is not current" $cells --check
 expect 0 "it is made again" $cells
 is "with the same bytes as before" "$(sha "$split")" = "$(sha "$t/keep.cells")"
 conf 'cells=9x18' 'cells_chars.neuronte-term-dingbat-v1=2700-27BF' \
-    'cells.neuronte-ui14-v1=14x28' 'cells_chars.neuronte-ui14-v1=ascii'
+    'cells.neuronte-ui14-v2=14x28' 'cells_chars.neuronte-ui14-v2=ascii'
 expect 1 "other settings make it not current" $cells --check
 expect 0 "a run with settings for single bundles" $cells
 is "a bundle given characters of its own has a cells file" -s "$cs/cells/neuronte-term-dingbat-v1.cells"
-is "a weight file the settings name has a cells file" -s "$cs/cells/neuronte-ui14-v1.cells"
+is "a weight file the settings name has a cells file" -s "$cs/cells/neuronte-ui14-v2.cells"
 is "a bundle trained on none of the characters has none" ! -e "$cs/cells/neuronte-term-math-v1.cells"
 : > "$cs/cells/neuronte-split-v9.cells.999.tmp" # what a killed run leaves
 conf 'cells=9x18' 'cells.neuronte-emoji-v1=9x18' 'cells_chars.neuronte-emoji-v1=all'
@@ -286,7 +286,7 @@ made=$(sed -n 's/^bundle \([^ ]*\) .* entries [1-9][0-9]* file .*/\1.cells/p' "$
 is "the cells directory holds the files the stamp names and no other" "$left" = "$made"
 is "the split bundle's file is among them" -s "$split"
 is "the file of a bundle that lost its own characters is gone" ! -e "$cs/cells/neuronte-term-dingbat-v1.cells"
-is "the file of a weight file the settings no longer name is gone" ! -e "$cs/cells/neuronte-ui14-v1.cells"
+is "the file of a weight file the settings no longer name is gone" ! -e "$cs/cells/neuronte-ui14-v2.cells"
 is "a colour net has no cells file" ! -e "$cs/cells/neuronte-emoji-v1.cells"
 is "what a killed run left is gone" "$(find "$cs/cells" -name '*.tmp' | wc -l)" = 0
 expect 0 "--verify of what is left" $tool --verify --threads "$threads"
@@ -314,12 +314,12 @@ is "and the bundle trained only on marks has no file" ! -e "$cs/cells/neuronte-t
 # A bundle of Kilix's own, by its name: all its characters, regular, at
 # Kilix's cells and their two-cell boxes. A desktop face stands in for it.
 mkdir -p "$t/kilix-weights"
-ln -s "$root/weights/neuronte-ui14-v1.nrt" "$t/kilix-weights/neuronte-kilix-test-v1.nrt"
+ln -s "$root/weights/neuronte-ui14-v2.nrt" "$t/kilix-weights/neuronte-kilix-test-v1.nrt"
 expect 0 "a bundle named neuronte-kilix-*" "$build/neuronte-cells" --weights "$t/kilix-weights" \
     --out "$t/kilix-cells" --threads "$threads"
 is "it is drawn at Kilix's cells and two-cell boxes, regular, every character" \
     "$(stat -c %s "$t/kilix-cells/neuronte-kilix-test-v1.cells")" = \
-    $((128 + 96 * 10 * 16 + 4 * 96 * (136 + 162 + 190 + 200 + 288 + 544 + 648 + 760 + 800 + 1152)))
+    $((128 + 192 * 10 * 16 + 4 * 192 * (136 + 162 + 190 + 200 + 288 + 544 + 648 + 760 + 800 + 1152)))
 conf 'cells=9by18'
 expect 1 "a cell that is none in the settings" env NEURONTE_SETUP_CONF="$t/cells.conf" \
     sh "$root/system/neuronte-setup" --only 30-cells

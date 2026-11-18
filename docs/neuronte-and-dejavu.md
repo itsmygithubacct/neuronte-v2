@@ -11,13 +11,16 @@ FreeType through Pillow 11.1.0, and of Neuronte 2.1.0, both inside the
 use either. Where a number comes from a run, the script is in
 [`bench/`](../bench/).
 
-Neuronte 2.1.1 changed the sizes from 17 px up: one scalable net now draws
-17 to 32 px in place of a hand-drawn net for each size, and the net above
-32 px was replaced by a faster one. Everything here about sizes 1 to 16 px
-holds for 2.1.1. The rows for 24, 32 and 48 px, the picture's lower lines
-and the byte counts describe 2.1.0; [CHANGES.md](../CHANGES.md) has the
-new figures (32.0 MB of weights in all), and from 17 px up the faces now
-also draw the accented letters of Latin-1.
+The set has changed since those measurements, and the table below and
+the sections on size and coverage describe the set as it is now, 2.5.0.
+Since 2.1.1 one scalable net draws 17 to 32 px in place of a hand-drawn
+net for each size, and a faster net draws above 32 px. Since 2.5.0 every
+desktop face, from 1 px up, draws all of Latin-1 as well as ASCII: 192
+characters. The pixels of ASCII from 1 to 16 px are the same as in
+2.1.0. The measured rows (the picture, the line widths and the speed
+table) are of 2.1.0; for 24, 32 and 48 px they show the hand-drawn and
+older faces that 2.1.1 replaced. [CHANGES.md](../CHANGES.md) has each
+version's figures.
 
 ## In one table
 
@@ -25,14 +28,14 @@ also draw the accented letters of Latin-1.
 |---|---|---|
 | What the font is | Outlines: curves that describe each letter's edge | Weights: nets trained on pixel drawings of each letter |
 | What draws it | FreeType scales the outline, hints it and fills it | The Neuronte library runs a net once for each letter, then copies the result |
-| Sizes | Any size, whole or fractional | One net for each whole size from 1 to 32 px; one scalable net above 32 px |
+| Sizes | Any size, whole or fractional | A net for each whole size from 1 to 16 px; one scalable net with snapped stems for 17 to 32 px; one blended net above 32 px |
 | Edges at desktop sizes | Grey (antialiased) by default; black and white on request | Black and white only, up to 32 px; grey above |
 | Letter widths | Fractions of a pixel | Whole pixels |
 | Kerning | 2,727 pairs in the regular face | None |
-| Characters | 5,918 code points in the regular face | 96 in a desktop face; the terminal bundle has more (below) |
+| Characters | 5,918 code points in the regular face | 192 in every desktop face: printable ASCII, the ellipsis and Latin-1; the terminal bundles have more (below) |
 | Bold | A separate bold design | The regular letter struck twice, one pixel apart |
 | Italic | A separate slanted outline (Oblique) | The regular drawing sheared on its own grid, 3 to 32 px |
-| On disk | 0.76 MB regular, 2.1 MB with bold and oblique | 36 MB for the 62 size files, 1.3 MB for the scalable one |
+| On disk | 0.76 MB regular, 2.1 MB with bold and oblique | 33.2 MB for the 30 files of 1 to 16 px, 3.3 MB for the scalable face of 17 to 32 px, 2.9 MB above 32 px |
 | Same pixels everywhere | Depends on the FreeType version and its hinting settings | The pixels are fixed by the weight file and checked by `make test` |
 | Licence | DejaVu Fonts licence (Bitstream Vera and Arev terms, with public-domain changes) | MIT |
 
@@ -48,15 +51,15 @@ program to pull stems onto pixel boundaries, and fills the result,
 reporting for each pixel how much of it the outline covers.
 
 A Neuronte desktop face has no outline. Each size was drawn by hand as
-pixels: [`font/ui-11.txt`](../font/ui-11.txt) is the 11 px design, a grid
+pixels: [`font/ui-11-latin1.txt`](../font/ui-11-latin1.txt) is the 11 px design, a grid
 of `#` and `.` for each letter, with its width. A small multilayer
 perceptron is then trained to reproduce that drawing: asked about a point
 in a letter's cell, it answers how far the point is from the ink.
-`neuronte-ui11-v1.nrt` is that net's weights and the table of widths. The
+`neuronte-ui11-v2.nrt` holds those nets' weights and the table of widths. The
 library asks the net about every pixel of a letter and turns the answers
-into pixels. `make test` draws every letter of every size, regular and
-bold, and compares it with the drawing; today all 11,904 match with no
-pixel wrong.
+into pixels. `make test` draws every letter of every size from 1 to 16
+px, upright and italic, regular and bold, and compares it with the
+drawing; today all 11,520 match with no pixel wrong.
 
 So the two keep different things. DejaVu keeps one shape and computes
 every size from it. Neuronte keeps a separate decision, made by a person,
@@ -185,24 +188,30 @@ size costs seconds, and it is the same file in Neuronte 0.1.1, 0.1.2 and
 ## Size on disk
 
 DejaVu Sans is 759,720 bytes; with Bold and Oblique it is 2.1 MB, and
-that covers every size. Neuronte's desktop faces are 62 files, one for
-each size and slant, and 36,123,084 bytes together; the 11 px face alone
-is 864,092 bytes. The scalable net is another 1,325,072 bytes. Neuronte
-spends about 18 times the bytes to draw 96 characters where DejaVu draws
-5,918.
+that covers every size. Neuronte 2.5.0's desktop faces are 33 files and
+39,362,028 bytes together: 30 files of 1 to 16 px, one for each size and
+slant, 33,163,952 bytes (the 11 px face alone is 1,372,508); the scalable
+face of 17 to 32 px, 3,250,312 bytes and 1,568 of italic advances; and
+the face above 32 px, 2,946,196 bytes. Neuronte spends about 19 times the
+bytes to draw 192 characters where DejaVu draws 5,918. (The 2.1.0 set
+measured above had 62 files for 1 to 32 px, 36,123,084 bytes, and a
+scalable net of 1,325,072 bytes, for 96 characters.)
 
 ## What each covers
 
-A Neuronte desktop face has 96 characters: printable ASCII and the
-ellipsis. When a string holds any other character, Kilix 95 measures and
-draws the whole string with DejaVu, so the two are never mixed on one
-line. Text in another script, accented names and most symbols are
-therefore still DejaVu on a Neuronte desktop.
+A Neuronte desktop face has 192 characters: printable ASCII, the
+ellipsis and the 96 of Latin-1 (accented letters, `ß`, `Æ`, `£`, `±`,
+`×`, `©`, `«` and the rest). When a string holds any other character,
+Kilix 95 measures and draws the whole string with DejaVu, so the two are
+never mixed on one line. Text in another script, curved quotes, dashes
+and most symbols are therefore still DejaVu on a Neuronte desktop.
 
 The terminal bundle, `neuronte-split-v9.nrt`, is a different kind of
 face: one design drawn into a cell of any size, covering ASCII, accented
 Latin, Greek, Cyrillic, symbols, arrows, math signs, box and block
-characters and Braille: 1,341 characters. It is what a terminal uses.
+characters and Braille: 1,341 characters. With the ten `neuronte-term-*`
+bundles opened beside it, a terminal has 4,919 characters, among them
+Hebrew and Lao. It is what a terminal uses.
 [BENCHMARKS.md](../BENCHMARKS.md#terminal-cells-three-ways) times it
 against DejaVu Sans Mono and counts the characters each has.
 
@@ -237,12 +246,12 @@ hinter made of a shape.
 
 ## Which to use
 
-- Use Neuronte for interface text in ASCII at 1 to 32 px, where exact,
+- Use Neuronte for interface text in ASCII and Latin-1 at 1 to 32 px, where exact,
   repeatable, black-and-white pixels and whole-pixel layout matter, and
   where the same letters are drawn many times.
 - Use DejaVu, or any outline font, for other scripts, for text that needs
   kerning or shaping, for arbitrary or fractional sizes, for rotated or
-  transformed text, for antialiased small text, and where 37 MB of weights
+  transformed text, for antialiased small text, and where 39 MB of weights
   is too much.
 - A desktop can use both, as Kilix 95 does: Neuronte where a face covers
   the string, DejaVu elsewhere.

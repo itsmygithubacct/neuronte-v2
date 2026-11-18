@@ -19,7 +19,7 @@ OpenType specification; no font library is asked what they hold.
    faces and for the italic nets, neuronte_draw_scalar_styled() for the
    sheared italic of 17 px and up, neuronte_coverage() for a terminal cell.
    The limit is 0 pixels and 0 advances. Below 17 px the baseline row is
-   taken from the face's drawing (font/ui-EM.txt), not from the generator's
+   taken from the face's drawing (font/ui-EM-latin1.txt), not from the generator's
    rule, so a strike set a row off fails.
 4. Outlines. Each outline of Sans Regular, Sans Bold and Mono is filled at
    the size it was traced at and compared with the net's coverage there,
@@ -324,7 +324,7 @@ def cell_of(bits, bx, by, base, x0, shape):
 def drawing_base(em):
     """The row under the baseline in the cell, from the face's drawing: the
     drawing names the last row of a letter that stands on the line."""
-    with open(os.path.join(ROOT, "font", f"ui-{em}.txt"), encoding="utf-8") as fh:
+    with open(os.path.join(ROOT, "font", f"ui-{em}-latin1.txt"), encoding="utf-8") as fh:
         words = []
         for line in fh:
             if not line.startswith("#"):

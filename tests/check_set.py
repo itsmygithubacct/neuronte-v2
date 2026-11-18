@@ -5,9 +5,11 @@ usage: python3 tests/check_set.py build/libneuronte.so [--write-golden]
 
 1. Every line of weights/SHA256SUMS matches its file, and every file in
    weights/ is listed.
-2. Every native desktop face (weights/neuronte-uiEM[-italic]-v1.nrt) is drawn
+2. Every native desktop face (weights/neuronte-uiEM[-italic]-vN.nrt) is drawn
    with neuronte_draw_text() at its em, binary, regular and bold, for each of
-   its 96 characters, and compared with the drawing in font/ui-EM[-italic].txt.
+   its 192 characters (printable ASCII, U+2026 and U+00A0..U+00FF), and
+   compared with the drawing in font/ui-EM-latin1[-italic].txt, which must
+   hold exactly those characters.
    The pen must move by the drawing's advance. A face may have at most BUDGET
    wrong pixels in all, and none on a digit.
 3. The packed text mask calls (src/bits.c) give what a pixel loop gives, and
@@ -39,6 +41,7 @@ sys.path.insert(0, os.path.join(ROOT, "train"))
 import glyphs  # noqa: E402
 
 BUDGET = 2
+FACE_CHARS = [chr(c) for c in range(0x20, 0x7F)] + ["\u2026"] + [chr(c) for c in range(0xA0, 0x100)]
 GOLDEN = os.path.join(ROOT, "tests", "golden.json")
 SCALARS = (list(range(0x20, 0x7F)) + [0xA0, 0xC9, 0xE9, 0xF1, 0x100, 0x152, 0x17E]
            + [0x391, 0x3A9, 0x3B1, 0x3C9, 0x410, 0x42F, 0x430, 0x44F, 0x451]
@@ -98,13 +101,17 @@ def face(lib, name):
     """Wrong pixels of one native face against its drawing."""
     m = re.fullmatch(r"neuronte-ui(\d+)(-italic)?-v\d+\.nrt", name)
     em, italic = int(m.group(1)), bool(m.group(2))
-    src = os.path.join(ROOT, "font", f"ui-{em}-italic.txt" if italic else f"ui-{em}.txt")
+    src = os.path.join(ROOT, "font", f"ui-{em}-latin1-italic.txt" if italic else f"ui-{em}-latin1.txt")
     h = open_file(lib, os.path.join(ROOT, "weights", name))
     lib.neuronte_set_binary(h, 1)
     W = H = 2 * em + 4
     X = Y = 2
     wrong, digits, pen, drawn = 0, 0, 0, 0
-    for ch, (adv, art) in sorted(glyphs.pixel_face(em, src).items()):
+    drawing = glyphs.pixel_face(em, src)
+    if sorted(drawing) != sorted(FACE_CHARS):
+        print(f"FAIL {name}: {os.path.basename(src)} holds {len(drawing)} characters, not the {len(FACE_CHARS)} of a face")
+        return False, 0, 0
+    for ch, (adv, art) in sorted(drawing.items()):
         ink = np.array([[c == "#" for c in r] for r in art])
         for bold in (0, 1):
             want = np.zeros((H, W), bool)
@@ -338,7 +345,7 @@ def untrained(lib):
     bad += lib.neuronte_set_untrained(h, 2) == 0
     lib.neuronte_close(h)
     # A desktop face is a bundle too: its letters are trained, nothing else is.
-    h = open_file(lib, os.path.join(ROOT, "weights", "neuronte-ui11-v1.nrt"))
+    h = open_file(lib, os.path.join(ROOT, "weights", "neuronte-ui11-v2.nrt"))
     bad += lib.neuronte_untrained(h, 0x41) != 0
     bad += lib.neuronte_untrained(h, 0x4E2D) != 1
     lib.neuronte_close(h)

@@ -25,14 +25,16 @@ face is Chromium's list of suggestions under the URL bar: see
 
 | File | Family, style | Characters | Outline from | Bitmap strikes |
 |---|---|---:|---|---|
-| `NeuronteSans-Regular.ttf` | Neuronte Sans, Regular | 154 | `neuronte-ui-large-latin1-v1` | 1 to 32 px, 1 bit |
-| `NeuronteSans-Bold.ttf` | Neuronte Sans, Bold | 154 | the same, the library's bold | 1 to 32 px, 1 bit |
-| `NeuronteSans-Italic.ttf` | Neuronte Sans, Italic | 154 | the same, the library's shear | 3 to 32 px, 1 bit |
-| `NeuronteSans-BoldItalic.ttf` | Neuronte Sans, Bold Italic | 154 | both | 3 to 32 px, 1 bit |
+| `NeuronteSans-Regular.ttf` | Neuronte Sans, Regular | 192 | `neuronte-ui-large-latin1-v2` | 1 to 32 px, 1 bit, every character |
+| `NeuronteSans-Bold.ttf` | Neuronte Sans, Bold | 192 | the same, the library's bold | 1 to 32 px, 1 bit, every character |
+| `NeuronteSans-Italic.ttf` | Neuronte Sans, Italic | 192 | the same, the library's shear | 3 to 32 px, 1 bit, every character |
+| `NeuronteSans-BoldItalic.ttf` | Neuronte Sans, Bold Italic | 192 | both | 3 to 32 px, 1 bit, every character |
 | `NeuronteMono-Regular.ttf` | Neuronte Mono, Regular | 4,958 | the terminal bundles | 9, 12, 13, 15, 16, 17, 20 px, 8 bit, ASCII and Latin-1 |
 
-2,337,012 bytes together with the weights of 2.4.0 (154,968, 159,784,
-163,276, 168,656 and 1,690,328). The 4,958 of Neuronte Mono are the
+2,557,184 bytes together with the weights of 2.5.0 (208,828, 214,936,
+217,864, 225,228 and 1,690,328; with the weights of 2.4.0, when Sans had
+154 characters, the four Sans files were 154,968, 159,784, 163,276 and
+168,656 bytes and Mono the same). The 4,958 of Neuronte Mono are the
 4,919 terminal characters of `neuronte-split-v9` and the ten
 `neuronte-term-*` bundles and the 39 symbols of
 `neuronte-kilix-chrome-v1`; with the weights of 2.3.0 it was 3,205
@@ -40,10 +42,12 @@ characters in 1,125,900 bytes.
 
 **Characters.** A file maps exactly the characters its nets were trained
 on (`neuronte_untrained()` is 0) and nothing else. Neuronte Sans has the
-154 of the scalable desktop face: printable ASCII, the ellipsis, the
-no-break space, and 57 accented letters and spacing accents of Latin-1.
-It does not have the other 38 Latin-1 characters, among them `£ ± × ÷ ß
-Æ ø § © « »`. Neuronte Mono has every character of the newest
+192 of the desktop faces: printable ASCII, the ellipsis and all 96
+characters of Latin-1, U+00A0 to U+00FF (among them `é ñ £ ± × ÷ ß Æ ø §
+© « »`), and every one of them has a strike at every size from 1 to 32
+px (3 to 32 px for the italics). With the weights of 2.4.0 it had 154:
+the faces from 1 to 16 px drew ASCII only, and the other 38 Latin-1
+characters were in no desktop face. Neuronte Mono has every character of the newest
 `neuronte-split-vN.nrt`, of every `neuronte-term-*.nrt` and of every
 `neuronte-kilix-*.nrt` in the weights directory, in that order and by
 name within each, a character going to the first bundle trained on it:
@@ -93,7 +97,7 @@ wide to the nearest pixel, twice as tall), at seven sizes: 9, 12, 15, 17
 and 20 px, which are the terminal's font sizes of 7 to 15 points at 96
 dots to the inch, and 13 and 16 px, a browser's usual sizes for monospace
 text. `make test` compares every strike glyph of every file with the
-library: 15,616 Sans glyphs and 1,330 Mono cells, the limit is 0 pixels
+library: 23,808 Sans glyphs (15,616 with the weights of 2.4.0) and 1,330 Mono cells, the limit is 0 pixels
 and 0 advances, and 0 differ.
 
 ## Why both outlines and strikes
@@ -165,9 +169,13 @@ strike's advance.
 - **No bold or italic Neuronte Mono.** fontconfig's stock rules make them
   from the regular file (emboldening, and a slant matrix). These are not
   the library's bold and italic of a terminal cell.
-- **Latin-1 below 17 px has no strike** in Neuronte Sans: the small faces
-  were not trained on it. `é` at 14 px is the outline with grey edges
-  beside black and white ASCII.
+- **Some Latin-1 characters share a strike's bitmap** with another
+  character, as they do in the faces from 1 to 16 px: the no-break space
+  and the space, the soft hyphen (drawn as a hyphen) and the hyphen from
+  12 to 16 px, `Ì ì`, `Í í` and `Î î` from 9 to 11 px, and more below 8
+  px, where a face has too few pixels to tell every one apart (at 6 px
+  `µ` and `p`, `ª ° º`, `¼ ½ ¾`). The [card of the faces][faces-v2] lists
+  them per size.
 - **Above 32 px italic and bold are the library's** shear and wider
   stroke applied to the upright large face, as in the library itself.
 - **Wide characters** that take two terminal cells, emoji and icons are
@@ -176,19 +184,23 @@ strike's advance.
 
 ## A character Neuronte Sans does not have
 
-A web page is seldom only ASCII. For a character outside the 154, a
+A web page is seldom only ASCII. For a character outside the 192, a
 program asks fontconfig for another font that has it, and with these
 files alone that is Neuronte Mono:
 
 ![Characters outside Neuronte Sans drawn from Neuronte Mono](neuronte-fontfile-fallback.png)
 
 Chromium 156, every line but the last `font-family: sans-serif`, 14 px.
-Curved quotes, dashes, the euro sign, `£` and `±`, Greek, Cyrillic,
+Curved quotes, dashes, the euro sign, Greek, Cyrillic,
 further Latin letters, arrows, mathematical signs and box drawing come
 from Neuronte Mono one character at a time. They are 0.6 em wide whatever
 the character, so a word in such letters is set wider than the sans text
 around it, and they are drawn from the outline with grey edges (Mono's
-strikes hold only ASCII and Latin-1). Chinese, Japanese, Korean, Hebrew,
+strikes hold only ASCII and Latin-1). The picture was taken with the
+weights of 2.4.0, when `£` and `±` were not yet in Neuronte Sans; they now
+are, with every other character of Latin-1. Neuronte Mono also has 36
+characters of the Hebrew block, 45 Hebrew presentation forms and 39 Lao
+characters, from `neuronte-term-rest-v1`. Chinese, Japanese, Korean,
 Arabic, Devanagari and emoji are in no net and show the mark.
 
 ## What a program still does itself
@@ -383,13 +395,22 @@ late for the login screen.
 
 Measured on a Core i7-6820HQ (4 cores, 8 threads), Debian 13, the
 weights of 2.4.0 (52 weight files, 56 MB), under the machine's benchmark
-lock.
+lock. The Sans row was measured again with the weights of 2.5.0, whose
+faces have 192 characters in place of 154 (median of five runs, the 2.4.0
+files timed in the same session as a check: 1.76, 3.16 and 5.86 s). Mono
+is made from the same weights in both and was not timed again; the row
+for all five is 2.4.0's.
 
 | Made in one run | 4 threads | 2 threads | 1 thread |
 |---|---:|---:|---:|
-| The four Sans files | 1.76 s | 3.14 s | 5.88 s |
+| The four Sans files, 2.5.0 | 2.38 s | 4.21 s | 7.80 s |
+| The four Sans files, 2.4.0 | 1.76 s | 3.14 s | 5.88 s |
 | Neuronte Mono | 5.50 s | 10.19 s | 19.16 s |
-| All five | 7.18 s | 13.19 s | 24.90 s |
+| All five, 2.4.0 | 7.18 s | 13.19 s | 24.90 s |
+
+On a Core i7-10700F the four Sans files take 1.63, 3.00 and 5.81 s with
+the weights of 2.5.0 (1.21, 2.26 and 4.35 s with 2.4.0's), and the bytes
+are the same on both machines.
 
 About 25 s of processor time for all five, however it is divided. The
 bytes are the same in every column. With the weights of 2.3.0, a third
@@ -408,22 +429,25 @@ steps, 15 to 18 ms; a step's own check is 2 to 3 ms of that and the
 rest is starting shells. `neuronte-setup --user` with no user step is 4
 to 8 ms. No net is opened and no file is read beyond its size and time.
 With `--verify`, which reads and hashes the 45 weight files the fonts
-are made from, 50 MB, a check takes 243 ms.
+are made from, a check took 243 ms with the 50 MB of 2.4.0's; with
+2.5.0's they are 65 MB, and that was not timed again.
 
 **A first start with nothing made** (the installer did not run
 `neuronte-setup`, or the weights were replaced): the early unit makes the
-Sans files, which holds the login screen back by 1.8 s with the four
-threads of the settings as shipped (3.1 s with two, 5.9 s with one). The
+Sans files, which holds the login screen back by 2.4 s with the four
+threads of the settings as shipped (4.2 s with two, 7.8 s with one;
+1.8, 3.1 and 5.9 s with the weights of 2.4.0). The
 login screen then has a font. Mono follows in the background,
 about 5.5 s later (10 s with two threads, 19 s with one), `fc-cache`
 pauses its 2 s after that, and the cells files take 1.3 s more (4.3 s
 with one thread): 8.9 s in all for what follows the login screen, 14.5
-s with two threads, 25.7 s with one. These times are of a machine doing nothing
+s with two threads, 25.7 s with one (measured with 2.4.0; the cells step
+draws the terminal bundles, which 2.5.0 does not change). These times are of a machine doing nothing
 else; a start with other services running at the same moment was not
 measured and will be slower. Until it is there:
 
 - a program that asks for `monospace` is given Neuronte Sans, and a
-  character outside the 154 of Sans shows the mark;
+  character outside the 192 of Sans shows the mark;
 - when the file arrives it is a new file, never a file changed under a
   program that has it open, and `fc-cache` is run again. A program
   started after that sees it. A program already running may keep the
@@ -500,3 +524,5 @@ Neuronte Mono at the cell sizes of the terminal's font sizes from 7 to
   where Pillow is installed, gives the strikes back; the stamps name
   every weight file and written file with the right hashes; a second run
   with another number of threads wrote the same bytes.
+
+[faces-v2]: https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-v2.md

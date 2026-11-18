@@ -6,6 +6,14 @@
 > this slim set. The file this set ships is the Latin-1 variant the card
 > describes (`-latin1` in its name): the same ASCII letters, byte for byte,
 > with the accented letters added.
+>
+> Since 2.5.0 the file this set ships is `neuronte-ui-large-latin1-v2`: the nets of `neuronte-ui-large-latin1-v1` that this
+> card describes, unchanged, and two more nets that draw the other 38 characters of Latin-1
+> (signs, ligatures, fractions and letters such as `ß`, `Æ`, `Þ`), so that it draws all 192 characters of
+> printable ASCII, U+2026 and U+00A0..U+00FF. Its ASCII and its 58 accented letters draw byte for byte
+> as `neuronte-ui-large-latin1-v1`'s. Its advances are `font/ui-large-latin1-full-advances.txt`, the table this card names with the 38 added. The 38 and their measurements are on
+> [their own card](https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-latin1-signs-v0.md) in Neuronte, at the commit
+> that made them; no Neuronte tag holds it yet.
 
 The same face as `neuronte-ui-large-v0` (the ui-large strokes, `font/ui-large.txt`, blended), with
 the same advances, drawn by a bundle of four smaller nets instead of one 384 wide. It draws a
