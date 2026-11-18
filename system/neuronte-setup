@@ -67,7 +67,7 @@ steps=${NEURONTE_SETUP_STEPS:-/usr/lib/neuronte/setup.d}
 weights=/usr/share/neuronte/weights
 state=/var/lib/neuronte
 threads=4
-early=10-backend,20-fontfile-sans
+early=10-backend
 skip=
 boot_limit=60
 

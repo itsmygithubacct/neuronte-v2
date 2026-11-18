@@ -298,9 +298,11 @@ A step reads `NEURONTE_WEIGHTS`, `NEURONTE_STATE`, `NEURONTE_THREADS` and
 when any step is not current; a run exits 1 when any step failed, after
 running the rest. `--early` runs only the steps the settings name as
 needed before a login screen starts (`early=`, as shipped `10-backend`,
-which belongs to another part and is skipped where it is not installed,
-and `20-fontfile-sans`), `--only A,B` the named ones, `--force`
-makes everything again.
+which belongs to another part and is skipped where it is not installed),
+`--only A,B` the named ones, `--force` makes everything again. No font
+step is early as shipped: the font files are made after the login screen
+has started (below). A machine with no font but Neuronte's names the Sans
+step too, `early=10-backend,20-fontfile-sans`.
 
 **At a start.** The early unit sets `NEURONTE_SETUP_BOOT=1`: a login
 screen is waiting. Under it a step's `run` must return within
@@ -314,9 +316,9 @@ the next run without `NEURONTE_SETUP_BOOT`, which
 That run writes the stamp; its messages are that unit's journal and its
 exit status is the unit's; until it has finished, `neuronte-setup
 --check` says the step is not current. Outside a start, exit 75 is a
-failure like any other. The font steps do not defer: the Sans step does
-its whole work inside the limit (the times are below) and the Mono step
-is not an early step.
+failure like any other. The font steps do not defer: neither is an early
+step as shipped, and the Sans step, where the settings make it one, does
+its whole work inside the limit (the times are below).
 
 **For each user.** `neuronte-setup --user` is the same command over the
 steps in `/usr/lib/neuronte/user-setup.d`, with the state in
@@ -337,13 +339,14 @@ changing the command:
 
 | Step | Makes | When |
 |---|---|---|
-| `20-fontfile-sans` | the four Neuronte Sans files | early: before the login screen |
-| `25-fontfile-mono` | Neuronte Mono | afterwards, in the background |
+| `20-fontfile-sans` | the four Neuronte Sans files | after the login screen has started, in the background, first |
+| `25-fontfile-mono` | Neuronte Mono | after the Sans files, in the background |
 | `30-cells` | cells files for programs that call the library (`docs/neuronte-cells.md`) | afterwards, in the background |
 
-The fonts are two steps because a login screen needs a font to exist,
-not every character, and the Sans files take less than half the time of
-Mono. A step with settings of its own reads them from the same settings
+The fonts are two steps so that the Sans files, which take less than
+half the time of Mono and are what most programs ask for, are there
+first, and so that a machine whose login screen has no other font can
+make the Sans step alone an early one. A step with settings of its own reads them from the same settings
 file, which the command names in `NEURONTE_SETUP_CONF`; the command
 passes over keys it does not know.
 
@@ -377,8 +380,9 @@ start of the machine finds the files made.
 ### The units, and why the system makes the fonts
 
 - `neuronte-setup-early.service`: `neuronte-setup --early`, ordered
-  before `display-manager.service`. A text or remote login does not wait
-  for it. It gives up after two minutes.
+  before `display-manager.service`. As shipped it runs no font step, so
+  the login screen waits for no font file. A text or remote login does
+  not wait for it. It gives up after two minutes.
 - `neuronte-setup.service`: `neuronte-setup`, after the early one and
   after the display manager has started, with `Type=exec` so that nothing
   waits for it to finish, at low priority.
@@ -386,8 +390,8 @@ start of the machine finds the files made.
   login, at the lowest priority; nothing waits for it.
 
 The font steps are run by the system units, not the user unit: the
-login screen runs as its own user before any user has a session and must
-find a font too, the files are the same for everyone, and one copy in
+login screen runs as its own user before any user has a session and uses
+them too, the files are the same for everyone, and one copy in
 `/var/lib/neuronte/fonts` serves all. A user unit would make the files once for each user and too
 late for the login screen.
 
@@ -418,14 +422,15 @@ fewer characters, Mono took 3.87, 7.17 and 13.6 s. Making Mono used 78
 MB of memory at most (peak resident size, measured on another machine;
 48 MB with the weights of 2.3.0).
 `fc-cache` on the directory then takes 2.02 s, of which 2 s is a pause it
-makes itself after writing a cache; the early step starts it and does not
-wait for it. A program that looks before the cache is written reads the
+makes itself after writing a cache; each font step starts it and does
+not wait for it. A program that looks before the cache is written reads the
 directory itself, which gives the same answer.
 
-**A normal start** finds the files current. `neuronte-setup --early`
-takes 5 to 11 ms (the medians of 20 were 10.9, 5.5 and 11.2 ms in
-three runs, hours apart) and the whole of `neuronte-setup`, three
-steps, 15 to 18 ms; a step's own check is 2 to 3 ms of that and the
+**A normal start** finds the files current. As shipped, `neuronte-setup
+--early` looks at no font step, so the login screen waits for none of
+this. With the Sans step named early it took 5 to 11 ms (the medians of
+20 were 10.9, 5.5 and 11.2 ms in three runs, hours apart). The whole of
+`neuronte-setup`, three steps, after the login screen, takes 15 to 18 ms; a step's own check is 2 to 3 ms of that and the
 rest is starting shells. `neuronte-setup --user` with no user step is 4
 to 8 ms. No net is opened and no file is read beyond its size and time.
 With `--verify`, which reads and hashes the 45 weight files the fonts
@@ -433,18 +438,24 @@ are made from, a check took 243 ms with the 50 MB of 2.4.0's; with
 2.5.0's they are 65 MB, and that was not timed again.
 
 **A first start with nothing made** (the installer did not run
-`neuronte-setup`, or the weights were replaced): the early unit makes the
-Sans files, which holds the login screen back by 2.4 s with the four
+`neuronte-setup`, or the weights were replaced): the login screen does
+not wait. `neuronte-setup.service` starts once the display manager has,
+at low priority, and makes the Sans files first: 2.4 s with the four
 threads of the settings as shipped (4.2 s with two, 7.8 s with one;
-1.8, 3.1 and 5.9 s with the weights of 2.4.0). The
-login screen then has a font. Mono follows in the background,
+1.8, 3.1 and 5.9 s with the weights of 2.4.0). Mono follows,
 about 5.5 s later (10 s with two threads, 19 s with one), `fc-cache`
 pauses its 2 s after that, and the cells files take 1.3 s more (4.3 s
-with one thread): 8.9 s in all for what follows the login screen, 14.5
+with one thread): 8.9 s for what follows the Sans files, 14.5
 s with two threads, 25.7 s with one (measured with 2.4.0; the cells step
-draws the terminal bundles, which 2.5.0 does not change). These times are of a machine doing nothing
+draws the terminal bundles, which 2.5.0 does not change), so about 11 s
+in all after the login screen has started, which was not timed as one
+run. These times are of a machine doing nothing
 else; a start with other services running at the same moment was not
-measured and will be slower. Until it is there:
+measured and will be slower. Until the files are there:
+
+- the login screen and every program are given the other fonts
+  installed, as they are anyway for every character those fonts have:
+  the fontconfig file makes the two families the last choice;
 
 - a program that asks for `monospace` is given Neuronte Sans, and a
   character outside the 192 of Sans shows the mark;
@@ -457,7 +468,10 @@ measured and will be slower. Until it is there:
 If a step fails (no weights directory, a full disk), the command says
 which and exits 1, the unit is marked failed, and what was there before
 stays untouched. With no file at all, a program that cannot start
-without a font still cannot.
+without a font still cannot. On a machine with no other font, that is
+what the login screen meets at a first start until the Sans step has
+run: such a machine names `20-fontfile-sans` in `early=`, and the login
+screen waits for it as before.
 
 ## Likely characters, and what a start can warm
 

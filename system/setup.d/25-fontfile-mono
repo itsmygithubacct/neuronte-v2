@@ -1,9 +1,9 @@
 #!/bin/sh
 # A step of neuronte-setup: the Neuronte Mono font file, every character
 # the terminal bundles in the weights directory were trained on. It takes
-# several times as long as the Sans files, so it is not one of the early
-# steps: until it is there, a program that asks fontconfig for a monospace
-# font is given Neuronte Sans (docs/neuronte-fontfile.md).
+# several times as long as the Sans files and is run after them, in the
+# background: until it is there, a program that asks fontconfig for a
+# monospace font is given Neuronte Sans (docs/neuronte-fontfile.md).
 set -u
 step=25-fontfile-mono
 word=${1-}

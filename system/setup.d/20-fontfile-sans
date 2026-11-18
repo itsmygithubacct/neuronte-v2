@@ -1,9 +1,12 @@
 #!/bin/sh
 # A step of neuronte-setup: the four Neuronte Sans font files, for programs
 # that take their text from fontconfig. neuronte-fontfile makes them from
-# the desktop nets alone; no GPU and no other step's result is used. This
-# is the step that must be done before a login screen starts: a program that
-# finds no font at all may not start (docs/neuronte-fontfile.md).
+# the desktop nets alone; no GPU and no other step's result is used. It is
+# run after the login screen has started, in the background, before Mono.
+# It is not an early step as shipped: until the files are there a program
+# is given the other fonts installed. On a machine with no other font, a
+# program that finds no font at all may not start, and the settings name
+# this step in early= (docs/neuronte-fontfile.md).
 set -u
 step=20-fontfile-sans
 word=${1-}

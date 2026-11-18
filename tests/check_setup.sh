@@ -5,8 +5,10 @@
 #
 # Everything is made under BUILD_DIR/setup-test; the weights are the tree's.
 # 1. With nothing made, --check says so (exit 1) and writes nothing.
-# 2. --early makes the four Sans files and not Mono; a plain run makes the
-#    rest; then --check exits 0.
+# 2. --early makes no font file as shipped (the fonts are made after the
+#    login screen); the Sans step makes the four Sans files and not Mono; a
+#    plain run makes the rest; then --check exits 0; settings that name the
+#    Sans step in early= make --early make it.
 # 3. A run when everything is current does nothing: no file, stamp or
 #    directory entry has another inode, size or time afterwards.
 # 4. A font file with a new time and the same bytes is still current; one
@@ -84,11 +86,14 @@ is "--check wrote nothing" ! -e "$state"
 
 # 2
 expect 0 "--early" $setup --early
+is "--early made no font file: the fonts are made after the login screen" ! -e "$fonts"
+sans="$setup --only 20-fontfile-sans"
+expect 0 "the Sans step" $sans
 for f in Regular Bold Italic BoldItalic; do
-    is "--early made NeuronteSans-$f.ttf" -s "$fonts/NeuronteSans-$f.ttf"
+    is "the Sans step made NeuronteSans-$f.ttf" -s "$fonts/NeuronteSans-$f.ttf"
 done
-is "--early left Mono for later" ! -e "$fonts/NeuronteMono-Regular.ttf"
-expect 0 "--early --check after --early" $setup --early --check
+is "the Sans step left Mono for later" ! -e "$fonts/NeuronteMono-Regular.ttf"
+expect 0 "--check of the Sans step after it" $sans --check
 expect 1 "--check before the rest is made" $setup --check
 expect 0 "a plain run" $setup
 is "the run made NeuronteMono-Regular.ttf" -s "$fonts/NeuronteMono-Regular.ttf"
@@ -124,8 +129,13 @@ expect 0 "a run after a byte of a font file changed" $setup
 is "that run made the font file as it was" "$(sha "$bold")" = "$whole"
 rm "$fonts/NeuronteSans-Italic.ttf"
 : > "$fonts/.NeuronteSans-Italic.ttf.12345.tmp" # what a killed run leaves
-expect 1 "--early --check after a font file was removed" $setup --early --check
-expect 0 "an early run after a font file was removed" $setup --early
+printf 'weights=%s\nstate=%s\nthreads=%s\nearly=10-backend,20-fontfile-sans\n' \
+    "$root/weights" "$state" "$threads" > "$t/early.conf"
+expect 1 "--early --check, Sans named early, after a font file was removed" \
+    env NEURONTE_SETUP_CONF="$t/early.conf" $setup --early --check
+expect 0 "an early run, Sans named early, after a font file was removed" \
+    env NEURONTE_SETUP_CONF="$t/early.conf" $setup --early
+is "that early run made the font file again" -s "$fonts/NeuronteSans-Italic.ttf"
 expect 0 "--check after that" $setup --check
 left=$(find "$state" -name '*.tmp' | wc -l)
 is "the file a killed run left is gone" "$left" = 0
@@ -134,11 +144,11 @@ is "the file a killed run left is gone" "$left" = 0
 stamp=$state/20-fontfile-sans.stamp
 cp "$stamp" "$t/stamp.keep"
 sed '1s/.*/neuronte-fontfile 0/' "$t/stamp.keep" > "$stamp"
-expect 1 "--check with a stamp of another generator version" $setup --early --check
+expect 1 "--check with a stamp of another generator version" $sans --check
 sed '2s/trace=[0-9]*/trace=48/' "$t/stamp.keep" > "$stamp"
-expect 1 "--check with a stamp of another option" $setup --early --check
+expect 1 "--check with a stamp of another option" $sans --check
 cp -p "$t/stamp.keep" "$stamp"
-expect 0 "--check with the stamp put back" $setup --early --check
+expect 0 "--check with the stamp put back" $sans --check
 for f in "$root"/weights/*.nrt "$root"/weights/*.symbols.txt; do
     [ ! -e "$f" ] || ln -s "$f" "$t/weights/"
 done
@@ -151,7 +161,7 @@ expect 0 "Mono with one more bundle that is not for one cell" \
     env NEURONTE_SETUP_CONF="$t/more.conf" $setup --only 25-fontfile-mono --check
 ln -s "$root/weights/neuronte-term-math-v1.nrt" "$t/weights/neuronte-term-zz-added-v1.nrt"
 expect 0 "the Sans files with one more bundle in the weights directory" \
-    env NEURONTE_SETUP_CONF="$t/more.conf" $setup --early --check
+    env NEURONTE_SETUP_CONF="$t/more.conf" $sans --check
 expect 1 "Mono with one more bundle in the weights directory" \
     env NEURONTE_SETUP_CONF="$t/more.conf" $setup --check
 
