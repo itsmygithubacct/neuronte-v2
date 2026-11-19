@@ -14,8 +14,8 @@ the 33 desktop faces of 2.5.0 are files of Neuronte at commit
 [bfd0a2d](https://github.com/itsmygithubacct/neuronte/tree/bfd0a2d066161eaa5abeae9747e151ff345702ef),
 which no Neuronte tag holds yet; the Neuronte Sans Metric faces and the
 wide bundles of 2.6.0 are files of Neuronte 0.1.7, as pushed on its
-branches at [0aa0a4c](https://github.com/itsmygithubacct/neuronte/tree/0aa0a4c52ce11cb36273153c28c2fa6b8ade1e9c)
-(Metric) and [985c177](https://github.com/itsmygithubacct/neuronte/tree/985c177443d330b7789fefe0001c10dd949640c6)
+branches at [0aa0a4c](https://github.com/itsmygithubacct/neuronte/tree/v0.1.7)
+(Metric) and [985c177](https://github.com/itsmygithubacct/neuronte/tree/v0.1.7)
 (wide); and every other net is a file of
 [Neuronte 0.1.6](https://github.com/itsmygithubacct/neuronte/tree/v0.1.6).
 The library is 0.1.7's source (`src/neuronte.c` and `include/neuronte.h`,
@@ -496,9 +496,9 @@ built with `make media`, links FFmpeg; see
 [faces-192-256]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-v1-192-256.md
 [faces-v2]: https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-v2.md
 [signs]: https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-latin1-signs-v0.md
-[metric]: https://github.com/itsmygithubacct/neuronte/blob/0aa0a4c52ce11cb36273153c28c2fa6b8ade1e9c/weights/neuronte-metric-sans-v1.md
-[wide-forms]: https://github.com/itsmygithubacct/neuronte/blob/985c177443d330b7789fefe0001c10dd949640c6/weights/neuronte-wide-forms-v1.md
-[wide-symbols]: https://github.com/itsmygithubacct/neuronte/blob/985c177443d330b7789fefe0001c10dd949640c6/weights/neuronte-wide-symbols-v1.md
-[wide-pictographs]: https://github.com/itsmygithubacct/neuronte/blob/985c177443d330b7789fefe0001c10dd949640c6/weights/neuronte-wide-pictographs-v1.md
-[wide-pictographs2]: https://github.com/itsmygithubacct/neuronte/blob/985c177443d330b7789fefe0001c10dd949640c6/weights/neuronte-wide-pictographs2-v1.md
-[wide-supplement]: https://github.com/itsmygithubacct/neuronte/blob/985c177443d330b7789fefe0001c10dd949640c6/weights/neuronte-wide-supplement-v1.md
+[metric]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.7/weights/neuronte-metric-sans-v1.md
+[wide-forms]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.7/weights/neuronte-wide-forms-v1.md
+[wide-symbols]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.7/weights/neuronte-wide-symbols-v1.md
+[wide-pictographs]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.7/weights/neuronte-wide-pictographs-v1.md
+[wide-pictographs2]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.7/weights/neuronte-wide-pictographs2-v1.md
+[wide-supplement]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.7/weights/neuronte-wide-supplement-v1.md
