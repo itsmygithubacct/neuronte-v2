@@ -1,14 +1,16 @@
 #!/bin/sh
-# Check neuronte-setup and its two font steps (system/).
+# Check neuronte-setup and its three font steps (system/).
 #
 # usage: sh tests/check_setup.sh BUILD_DIR [THREADS]
 #
 # Everything is made under BUILD_DIR/setup-test; the weights are the tree's.
 # 1. With nothing made, --check says so (exit 1) and writes nothing.
 # 2. --early makes no font file as shipped (the fonts are made after the
-#    login screen); the Sans step makes the four Sans files and not Mono; a
-#    plain run makes the rest; then --check exits 0; settings that name the
-#    Sans step in early= make --early make it.
+#    login screen); the Sans step makes the four Sans files and not Mono;
+#    the Metric step makes the four Neuronte Sans Metric files, and does
+#    nothing with a weights directory that has none of its faces; a plain
+#    run makes the rest; then --check exits 0; settings that name the Sans
+#    step in early= make --early make it.
 # 3. A run when everything is current does nothing: no file, stamp or
 #    directory entry has another inode, size or time afterwards.
 # 4. A font file with a new time and the same bytes is still current; one
@@ -35,6 +37,11 @@
 #    step; one thread and several write the same bytes. The status marks
 #    are added in the regular style at their own cells, once where the
 #    other settings already draw them, and cells_marks=none leaves them out.
+# 10. With fc-match: fontconfig, given the font files and 66-neuronte.conf
+#    alone, gives Neuronte Sans Metric first for Arial, Helvetica,
+#    Liberation Sans and Arimo, and Neuronte Sans first for sans-serif;
+#    with a font of another family installed and named by the program's
+#    own lists, that font comes before the Metric face (the alias is weak).
 # It leaves BUILD_DIR/setup-test/state/fonts for tests/check_fontfile.py.
 set -u
 build=${1:?usage: check_setup.sh BUILD_DIR [THREADS]}
@@ -93,6 +100,20 @@ for f in Regular Bold Italic BoldItalic; do
     is "the Sans step made NeuronteSans-$f.ttf" -s "$fonts/NeuronteSans-$f.ttf"
 done
 is "the Sans step left Mono for later" ! -e "$fonts/NeuronteMono-Regular.ttf"
+is "the Sans step left Neuronte Sans Metric for later" ! -e "$fonts/NeuronteSansMetric-Regular.ttf"
+metric="$setup --only 22-fontfile-metric"
+expect 0 "the Metric step" $metric
+for f in Regular Bold Italic BoldItalic; do
+    is "the Metric step made NeuronteSansMetric-$f.ttf" -s "$fonts/NeuronteSansMetric-$f.ttf"
+done
+is "the Metric step left Mono for later" ! -e "$fonts/NeuronteMono-Regular.ttf"
+expect 0 "--check of the Metric step after it" $metric --check
+mkdir -p "$t/no-metric"
+printf 'weights=%s\nstate=%s\nthreads=%s\n' "$t/no-metric" "$t/no-metric-state" "$threads" > "$t/no-metric.conf"
+expect 0 "--check of the Metric step with no Metric face in the weights" \
+    env NEURONTE_SETUP_CONF="$t/no-metric.conf" $metric --check
+expect 0 "the Metric step with no Metric face in the weights" env NEURONTE_SETUP_CONF="$t/no-metric.conf" $metric
+is "that run made no font file" ! -e "$t/no-metric-state/fonts"
 expect 0 "--check of the Sans step after it" $sans --check
 expect 1 "--check before the rest is made" $setup --check
 expect 0 "a plain run" $setup
@@ -171,7 +192,7 @@ printf '#!/bin/sh\n[ "$1" = check ] && exit 1\necho "this step fails" >&2\nexit 
 chmod +x "$t/steps/10-fails"
 snapshot > "$t/before.txt"
 expect 1 "a run with a failing step" env NEURONTE_SETUP_STEPS="$t/steps" sh "$root/system/neuronte-setup"
-is "the steps after the failing one were looked at" "$(grep -c ': current$' "$t/out.txt")" = 3
+is "the steps after the failing one were looked at" "$(grep -c ': current$' "$t/out.txt")" = 4
 is "the failure is named" "$(grep -c '10-fails: FAILED (exit 3)' "$t/out.txt")" = 1
 expect 1 "--check with a step that is not current" env NEURONTE_SETUP_STEPS="$t/steps" $setup --check
 printf 'weights=%s\nstate=%s\nthreads=%s\nskip=10-fails\n' "$root/weights" "$state" "$threads" > "$t/skip.conf"
@@ -334,6 +355,35 @@ conf 'cells=9by18'
 expect 1 "a cell that is none in the settings" env NEURONTE_SETUP_CONF="$t/cells.conf" \
     sh "$root/system/neuronte-setup" --only 30-cells
 is "the step is reported as failed" "$(grep -c '30-cells: FAILED (exit 2)' "$t/out.txt")" = 1
+
+# 10
+if command -v fc-match > /dev/null 2>&1; then
+    # Only the files just made and the shipped rules: no other font.
+    mkdir -p "$t/fc"
+    printf '<?xml version="1.0"?>\n<fontconfig>\n<dir>%s</dir>\n<cachedir>%s</cachedir>\n<include>%s</include>\n</fontconfig>\n' \
+        "$fonts" "$t/fc/cache" "$root/system/66-neuronte.conf" > "$t/fc/alone.conf"
+    for fam in Arial Helvetica "Liberation Sans" Arimo; do
+        got=$(FONTCONFIG_FILE="$t/fc/alone.conf" fc-match -f '%{family[0]}' "$fam" 2> /dev/null)
+        is "fontconfig gives Neuronte Sans Metric for $fam (got: $got)" "$got" = "Neuronte Sans Metric"
+        got=$(FONTCONFIG_FILE="$t/fc/alone.conf" fc-match -f '%{family[0]}' "$fam:bold" 2> /dev/null)
+        is "fontconfig gives Neuronte Sans Metric for $fam bold (got: $got)" "$got" = "Neuronte Sans Metric"
+    done
+    # In fc-match's syntax a hyphen starts a size: the family is written sans\-serif.
+    got=$(FONTCONFIG_FILE="$t/fc/alone.conf" fc-match -f '%{family[0]}' 'sans\-serif' 2> /dev/null)
+    is "fontconfig gives Neuronte Sans for sans-serif (got: $got)" "$got" = "Neuronte Sans"
+    got=$(FONTCONFIG_FILE="$t/fc/alone.conf" fc-match -f '%{style[0]}' "Arial:bold:italic" 2> /dev/null)
+    is "fontconfig gives the Metric Bold Italic for Arial bold italic (got: $got)" "$got" = "Bold Italic"
+    # Weak: another font named by a rule before ours is chosen first. Neuronte
+    # Mono stands in for an installed Liberation Sans.
+    printf '<?xml version="1.0"?>\n<fontconfig>\n<alias binding="same"><family>Arial</family><accept><family>Neuronte Mono</family></accept></alias>\n<include>%s</include>\n</fontconfig>\n' \
+        "$t/fc/alone.conf" > "$t/fc/other.conf"
+    got=$(FONTCONFIG_FILE="$t/fc/other.conf" fc-match -f '%{family[0]}' Arial 2> /dev/null)
+    is "an earlier rule's family comes before Neuronte Sans Metric (got: $got)" "$got" = "Neuronte Mono"
+    got=$(FONTCONFIG_FILE="$t/fc/other.conf" fc-match -s -f '%{family[0]}\n' Arial 2> /dev/null | sed -n 2p)
+    is "Neuronte Sans Metric comes next (got: $got)" "$got" = "Neuronte Sans Metric"
+else
+    echo "check_setup: fontconfig checks skipped: fc-match is not installed"
+fi
 
 if [ "$fails" != 0 ]; then
     echo "check_setup: $fails of $checks checks failed"

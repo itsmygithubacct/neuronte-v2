@@ -11,6 +11,8 @@
  * tables are written from the OpenType specification.
  *
  *   NeuronteSans-Regular.ttf, -Bold, -Italic, -BoldItalic   the desktop faces
+ *   NeuronteSansMetric-Regular.ttf, -Bold, -Italic, -BoldItalic
+ *                                the desktop faces at Helvetica's advances
  *   NeuronteMono-Regular.ttf                                the terminal bundles
  *   neuronte-fontfile.stamp      the SHA-256, size and time of every weight
  *                                file used and of every file written
@@ -503,6 +505,7 @@ typedef struct {
     uint32_t scalar;
     const neuronte *src; /* the net that draws its outline */
     int advance, lsb;    /* font units */
+    int dx;              /* the advance table's shift of the drawing, font units */
     loops traced;        /* cell pixels, until the baseline is known */
     int ncont, npts;
     int *end;
@@ -663,7 +666,7 @@ static void to_units(glyph *g, double unit, double base, int shear, int w, int h
             ipt q;
             if (shear)
                 x += (0.675 - y / h) * w / 2.0;
-            q.x = (int16_t)floor(x * unit + 0.5);
+            q.x = (int16_t)(floor(x * unit + 0.5) + g->dx);
             q.y = (int16_t)floor((base - y) * unit + 0.5);
             if (g->npts > first && g->pts[g->npts - 1].x == q.x && g->pts[g->npts - 1].y == q.y)
                 continue;
@@ -1312,9 +1315,11 @@ static neuronte *use(weights *ws, const listing *l, const char *name)
 
 typedef struct {
     neuronte *ui[MAX_UI + 1], *ui_italic[MAX_UI + 1];
+    neuronte *bold_ui[MAX_UI + 1], *bold_italic[MAX_UI + 1]; /* drawn bold faces (Metric) */
     neuronte *scaled, *slant, *large;
     neuronte *term[MAX_TERMS];
     int terms;
+    int metric; /* Neuronte Sans Metric: advances in thousandths, shifts, drawn bold */
 } sources;
 
 /* The weight files the wanted faces are made from. The Sans files take
@@ -1364,6 +1369,48 @@ static void open_sources(sources *src, weights *ws, const listing *l, int sans, 
             src->term[src->terms++] = use(ws, l, l->names[i]);
 }
 
+/* The files of Neuronte Sans Metric: the pixel faces of 1 to 16 px and
+ * their italics, the drawn bold faces and their italics where there are
+ * some (9 to 16 px), and the scaled (17 to 32 px) and large faces. Their
+ * italic above 16 px is the upright face sheared, at its own advances.
+ * The mark comes from the first terminal bundle, as for Neuronte Sans. */
+static void open_metric(sources *m, weights *ws, const listing *l, const sources *src)
+{
+    char prefix[64];
+    int em;
+    memset(m, 0, sizeof *m);
+    m->metric = 1;
+    for (em = 1; em <= 16; em++) {
+        snprintf(prefix, sizeof prefix, "neuronte-metric-sans%d-v", em);
+        m->ui[em] = use(ws, l, newest(l, prefix));
+        snprintf(prefix, sizeof prefix, "neuronte-metric-sans%d-italic-v", em);
+        m->ui_italic[em] = use(ws, l, newest(l, prefix));
+        snprintf(prefix, sizeof prefix, "neuronte-metric-sans%d-bold-v", em);
+        m->bold_ui[em] = use(ws, l, newest(l, prefix));
+        snprintf(prefix, sizeof prefix, "neuronte-metric-sans%d-bold-italic-v", em);
+        m->bold_italic[em] = use(ws, l, newest(l, prefix));
+    }
+    m->scaled = use(ws, l, newest(l, "neuronte-metric-sans-scaled-v"));
+    m->large = use(ws, l, newest(l, "neuronte-metric-sans-large-v"));
+    if (src->terms) {
+        m->term[0] = src->term[0];
+        m->terms = 1;
+    }
+}
+
+/* Is n one of the files a desktop family's own faces are made from? The
+ * first terminal bundle is, for the mark. */
+static int own_file(const sources *src, const neuronte *n)
+{
+    int em;
+    if (!n)
+        return 0;
+    for (em = 1; em <= MAX_UI; em++)
+        if (n == src->ui[em] || n == src->ui_italic[em] || n == src->bold_ui[em] || n == src->bold_italic[em])
+            return 1;
+    return n == src->scaled || n == src->slant || n == src->large || (src->terms && n == src->term[0]);
+}
+
 /* 1 when the handle has a table of trained characters and s is in it. A
  * file without a table answers 0 for every scalar, so ask about a value
  * no net is trained on first. */
@@ -1395,6 +1442,8 @@ typedef struct {
     float **trace;          /* [glyph]: the outline net's coverage of the trace cell */
     float **up[MAX_UI + 1]; /* [em][glyph]: the upright face of that em, em by 2 em, or NULL */
     float **it[MAX_UI + 1]; /* the same from the italic nets, 16 px and below */
+    float **bup[MAX_UI + 1]; /* the drawn bold faces, where there are some */
+    float **bit[MAX_UI + 1]; /* and their italics */
 } sans_kept;
 
 typedef struct {
@@ -1521,9 +1570,15 @@ static void sans_strike(void *varg, int index)
     const sans_kept *kept = a->kept;
     int em = st->ppem, w = em, h = 2 * em, i, base = -1, x, y;
     int sheared = em > 16 && f->italic;
-    const neuronte *adv_n = em <= 16 ? (f->italic ? src->ui_italic[em] : src->ui[em])
-                                     : (f->italic ? src->slant : src->scaled);
-    float **cells = em <= 16 && f->italic ? kept->it[em] : kept->up[em];
+    /* A drawn bold face is drawn as it is (bold 0), at its own advances;
+     * where there is none, bold is the letter struck twice. */
+    const neuronte *drawn = em <= 16 && f->bold ? (f->italic ? src->bold_italic[em] : src->bold_ui[em]) : NULL;
+    int struck = f->bold && !drawn;
+    const neuronte *adv_n = drawn ? drawn
+                            : em <= 16 ? (f->italic ? src->ui_italic[em] : src->ui[em])
+                                       : (f->italic && src->slant ? src->slant : src->scaled);
+    float **cells = drawn ? (f->italic ? kept->bit[em] : kept->bup[em])
+                    : em <= 16 && f->italic ? kept->it[em] : kept->up[em];
     /* One column more than the cell: the second strike of a bold letter may
      * land there. */
     float *cell = xmalloc((size_t)(w + 1) * h * sizeof *cell);
@@ -1552,14 +1607,23 @@ static void sans_strike(void *varg, int index)
                 float v = at(row, w, x - shift);
                 /* Bold: the letter struck twice, the second time one pixel
                  * to the right, each pixel the greater of the two. */
-                if (f->bold && at(row, w, x - shift - 1) > v)
+                if (struck && at(row, w, x - shift - 1) > v)
                     v = at(row, w, x - shift - 1);
                 /* The sheared italic is the library's styled cell, which
                  * keeps its ink inside the cell. */
                 cell[(size_t)y * (w + 1) + x] = sheared && x == w ? 0.0f : v;
             }
         }
-        keep_cell(&st->g[i], cell, w + 1, h, 1, base, neuronte_advance(adv_n, s, f->bold, em));
+        keep_cell(&st->g[i], cell, w + 1, h, 1, base, neuronte_advance(adv_n, s, struck, em));
+        /* A version 8 table moves the drawing right of the pen, as the
+         * library's draw calls do. */
+        if (src->metric) {
+            int px = 0;
+            neuronte_advance_shift(adv_n, s, struck, em, NULL, &px);
+            if (st->g[i].bx + px > 127 || st->g[i].bx + px < -128)
+                die("a shifted strike glyph does not fit small metrics");
+            st->g[i].bx = (int8_t)(st->g[i].bx + px);
+        }
     }
     mark_strike(st, src, mono_cell(em));
     free(cell);
@@ -1607,7 +1671,9 @@ static void face_digest(face *f, const weights *ws, const sources *src)
         for (k = 0; k < src->terms; k++)
             if (src->term[k] == ws->w[i].n)
                 bundle = k;
-        if (f->mono ? bundle >= 0 : bundle <= 0)
+        /* A desktop family's digest is of its own files only, so a file of
+         * the other family beside them changes no byte of it. */
+        if (f->mono ? bundle >= 0 : own_file(src, ws->w[i].n))
             sha_add(&s, ws->w[i].sha, 64);
     }
     sha_hex(&s, f->source);
@@ -1710,7 +1776,7 @@ static void keep_sans(sans_kept *kept, const sources *src, const options *opt, i
         if (in_face(outline, s))
             kept->scalar[n++] = s; /* in rising order; glyph 0 is the mark */
     kept->nglyphs = n;
-    jobs_list = xmalloc((size_t)n * (2 * MAX_UI + 2) * sizeof *jobs_list);
+    jobs_list = xmalloc((size_t)n * (4 * MAX_UI + 2) * sizeof *jobs_list);
     kept->trace = xcalloc((size_t)n, sizeof *kept->trace);
     for (i = 1; i < n; i++) {
         keep_job j = {outline, kept->scalar[i], opt->trace_px, 1, &kept->trace[i]};
@@ -1722,15 +1788,26 @@ static void keep_sans(sans_kept *kept, const sources *src, const options *opt, i
         int samples = em < 24 ? 2 : 1; /* what the draw calls take when left to choose */
         kept->up[em] = xcalloc((size_t)n, sizeof *kept->up[em]);
         kept->it[em] = xcalloc((size_t)n, sizeof *kept->it[em]);
+        kept->bup[em] = xcalloc((size_t)n, sizeof *kept->bup[em]);
+        kept->bit[em] = xcalloc((size_t)n, sizeof *kept->bit[em]);
         if (!opt->strikes || !up || !neuronte_advances(up))
             continue;
         for (i = 1; i < n; i++) {
+            const neuronte *bu = em <= 16 ? src->bold_ui[em] : NULL, *bi = em <= 16 ? src->bold_italic[em] : NULL;
             if (in_face(up, kept->scalar[i])) {
                 keep_job j = {up, kept->scalar[i], em, samples, &kept->up[em][i]};
                 jobs_list[njobs++] = j;
             }
             if (italics && it && in_face(it, kept->scalar[i])) {
                 keep_job j = {it, kept->scalar[i], em, samples, &kept->it[em][i]};
+                jobs_list[njobs++] = j;
+            }
+            if (bu && in_face(bu, kept->scalar[i])) {
+                keep_job j = {bu, kept->scalar[i], em, samples, &kept->bup[em][i]};
+                jobs_list[njobs++] = j;
+            }
+            if (italics && bi && in_face(bi, kept->scalar[i])) {
+                keep_job j = {bi, kept->scalar[i], em, samples, &kept->bit[em][i]};
                 jobs_list[njobs++] = j;
             }
         }
@@ -1757,9 +1834,18 @@ static void build_sans(face *f, const sans_kept *kept, const sources *src, const
                                                                                                     : outline;
         g->scalar = s;
         g->src = outline;
-        /* Steps of a hundredth of an em. The scalable bold is the library's:
-         * ink a 32nd of an em wider, and the pen that much further. */
-        g->advance = neuronte_advance_steps(adv, s, 0) * UPM / 100 + (f->bold ? UPM / 32 : 0);
+        if (src->metric) {
+            /* Thousandths of an em, the weight's own column (Helvetica-Bold's
+             * widths for bold), and the table's shift of the drawing in the
+             * left side bearing. The pen never moves by the shift. */
+            int shift = 0;
+            g->advance = neuronte_advance_milli(adv, s, f->bold) * UPM / 1000;
+            neuronte_advance_shift(adv, s, f->bold, 1, &shift, NULL);
+            g->dx = shift * UPM / 1000;
+        } else
+            /* The scalable bold is the library's: ink a 32nd of an em wider,
+             * and the pen that much further. */
+            g->advance = neuronte_advance_milli(adv, s, 0) * UPM / 1000 + (f->bold ? UPM / 32 : 0);
     }
     face_digest(f, ws, src);
     i = (f->cell_w + 16) / 32;
@@ -1771,7 +1857,7 @@ static void build_sans(face *f, const sans_kept *kept, const sources *src, const
         strike *st;
         if (!src->ui[em] && em <= 16)
             continue;
-        if (em > 16 && (!src->scaled || !neuronte_advances(src->scaled) || (f->italic && !src->slant)))
+        if (em > 16 && (!src->scaled || !neuronte_advances(src->scaled) || (f->italic && !src->slant && !src->metric)))
             continue;
         if (em <= 16 && (!neuronte_advances(src->ui[em]) ||
                          (f->italic && (!src->ui_italic[em] || !neuronte_advances(src->ui_italic[em])))))
@@ -2132,10 +2218,12 @@ static void usage(void)
           "           [--no-strikes] [--no-outlines] [--mono-sizes LIST]\n"
           "           [--mono-chars LIST] [--trace PIXELS] [--tolerance PIXELS]\n"
           "           [--no-fc-cache] [--fc-cache-nowait] [--verbose]\n"
-          "Writes NeuronteSans-*.ttf and NeuronteMono-Regular.ttf into the --out\n"
-          "directory (default .) from the weight files in --weights (default weights),\n"
-          "unless they are already there and made from the same weights.\n"
-          "--faces takes regular,bold,italic,bolditalic,mono (default all).\n"
+          "Writes NeuronteSans-*.ttf, NeuronteMono-Regular.ttf and NeuronteSansMetric-*.ttf\n"
+          "into the --out directory (default .) from the weight files in --weights\n"
+          "(default weights), unless they are already there and made from the same weights.\n"
+          "--faces takes regular,bold,italic,bolditalic,mono and metric-regular,\n"
+          "metric-bold,metric-italic,metric-bolditalic (default all; the metric faces\n"
+          "only when the weights hold them).\n"
           "--stamp names the record of what the files were made from (default\n"
           "neuronte-fontfile.stamp in the --out directory).\n"
           "--check writes nothing: exit 0 when a run would write nothing, 1 otherwise.\n"
@@ -2150,21 +2238,35 @@ int main(int argc, char **argv)
 {
     static listing l;
     static weights ws, plan;
-    static sources src;
-    static sans_kept kept;
+    static sources src, msrc;
+    static sans_kept kept, mkept;
     static const struct {
         const char *key, *file, *family, *style, *psname;
-        int bold, italic, mono;
-    } all[] = {{"regular", "NeuronteSans-Regular.ttf", "Neuronte Sans", "Regular", "NeuronteSans-Regular", 0, 0, 0},
-               {"bold", "NeuronteSans-Bold.ttf", "Neuronte Sans", "Bold", "NeuronteSans-Bold", 1, 0, 0},
-               {"italic", "NeuronteSans-Italic.ttf", "Neuronte Sans", "Italic", "NeuronteSans-Italic", 0, 1, 0},
+        int bold, italic, mono, metric;
+    } all[] = {{"regular", "NeuronteSans-Regular.ttf", "Neuronte Sans", "Regular", "NeuronteSans-Regular", 0, 0, 0, 0},
+               {"bold", "NeuronteSans-Bold.ttf", "Neuronte Sans", "Bold", "NeuronteSans-Bold", 1, 0, 0, 0},
+               {"italic", "NeuronteSans-Italic.ttf", "Neuronte Sans", "Italic", "NeuronteSans-Italic", 0, 1, 0, 0},
                {"bolditalic", "NeuronteSans-BoldItalic.ttf", "Neuronte Sans", "Bold Italic",
-                "NeuronteSans-BoldItalic", 1, 1, 0},
-               {"mono", "NeuronteMono-Regular.ttf", "Neuronte Mono", "Regular", "NeuronteMono-Regular", 0, 0, 1}};
-    const char *wdir = "weights", *odir = ".", *faces = "regular,bold,italic,bolditalic,mono";
+                "NeuronteSans-BoldItalic", 1, 1, 0, 0},
+               {"mono", "NeuronteMono-Regular.ttf", "Neuronte Mono", "Regular", "NeuronteMono-Regular", 0, 0, 1, 0},
+               {"metric-regular", "NeuronteSansMetric-Regular.ttf", "Neuronte Sans Metric", "Regular",
+                "NeuronteSansMetric-Regular", 0, 0, 0, 1},
+               {"metric-bold", "NeuronteSansMetric-Bold.ttf", "Neuronte Sans Metric", "Bold",
+                "NeuronteSansMetric-Bold", 1, 0, 0, 1},
+               {"metric-italic", "NeuronteSansMetric-Italic.ttf", "Neuronte Sans Metric", "Italic",
+                "NeuronteSansMetric-Italic", 0, 1, 0, 1},
+               {"metric-bolditalic", "NeuronteSansMetric-BoldItalic.ttf", "Neuronte Sans Metric", "Bold Italic",
+                "NeuronteSansMetric-BoldItalic", 1, 1, 0, 1}};
+    /* Without --faces: every face whose files are there. Neuronte Sans
+     * Metric is left out of a weights directory that has none of its
+     * files, and the options are then the ones a run before it recorded. */
+    const char *wdir = "weights", *odir = ".", *faces = NULL;
+    const char *all_faces = "regular,bold,italic,bolditalic,mono,"
+                            "metric-regular,metric-bold,metric-italic,metric-bolditalic";
     const char *stamp_arg = NULL, *stamp_name;
     options opt = {2, 64, 1, 1, 1, 0.1, "9,12,13,15,16,17,20", "0x20-0x7E,0xA0-0xFF"};
-    int check = 0, force = 0, verify = 0, cache = 1, i, k, wrote = 0, sans = 0, mono = 0, touched, outputs;
+    int check = 0, force = 0, verify = 0, cache = 1, i, k, wrote = 0, sans = 0, mono = 0, metric = 0;
+    int touched, outputs;
     buf stamp = {0}, fresh = {0};
     static char stamp_path[2 * MAX_PATH_LEN], stamp_dir[MAX_PATH_LEN];
     double t0 = now();
@@ -2214,13 +2316,17 @@ int main(int argc, char **argv)
     }
     if (opt.threads < 1 || opt.trace_px < 16 || opt.trace_px > 512 || !(opt.tol >= 0.0) ||
         strlen(wdir) >= MAX_PATH_LEN || strlen(odir) >= MAX_PATH_LEN ||
-        (stamp_arg && strlen(stamp_arg) >= MAX_PATH_LEN) || strpbrk(faces, " \t\n") ||
+        (stamp_arg && strlen(stamp_arg) >= MAX_PATH_LEN) || (faces && strpbrk(faces, " \t\n")) ||
         strpbrk(opt.mono_sizes, " \t\n") || strpbrk(opt.mono_chars, " \t\n"))
         usage();
+    list_dir(&l, wdir);
+    if (!faces)
+        faces = newest(&l, "neuronte-metric-sans-large-v") || newest(&l, "neuronte-metric-sans-scaled-v")
+                    ? all_faces : "regular,bold,italic,bolditalic,mono";
     for (k = 0; k < (int)(sizeof all / sizeof all[0]); k++)
         if (listed(faces, all[k].key))
-            *(all[k].mono ? &mono : &sans) = 1;
-    if (!sans && !mono)
+            *(all[k].mono ? &mono : all[k].metric ? &metric : &sans) = 1;
+    if (!sans && !mono && !metric)
         die("--faces names no face");
     if (stamp_arg)
         snprintf(stamp_path, sizeof stamp_path, "%s", stamp_arg);
@@ -2236,9 +2342,10 @@ int main(int argc, char **argv)
 
     /* Current already? Answered from names, sizes and times: no net is
      * opened and, unless a time changed, no file is read. */
-    list_dir(&l, wdir);
     plan.names_only = 1;
     open_sources(&src, &plan, &l, sans, mono);
+    if (metric)
+        open_metric(&msrc, &plan, &l, &src);
     if (!force && is_current(stamp_path, &stamp, &plan, wdir, odir, verify, &fresh, &touched, &outputs)) {
         /* The same bytes under a new time (a copy, a restored backup):
          * note the times so that the next run need not read the files. */
@@ -2255,6 +2362,8 @@ int main(int argc, char **argv)
     }
 
     open_sources(&src, &ws, &l, sans, mono);
+    if (metric)
+        open_metric(&msrc, &ws, &l, &src);
     /* The mark for what no bundle was trained on comes from the first one. */
     if (src.terms)
         neuronte_set_untrained(src.term[0], 1);
@@ -2284,7 +2393,17 @@ int main(int argc, char **argv)
         f.mono = all[k].mono;
         if (f.mono)
             build_mono(&f, &src, &ws, &opt);
-        else {
+        else if (all[k].metric) {
+            if (!msrc.large && !msrc.scaled)
+                die("the weights hold no scalable Metric face (neuronte-metric-sans-large-*.nrt or "
+                    "neuronte-metric-sans-scaled-*.nrt)");
+            if (!mkept.nglyphs) {
+                keep_sans(&mkept, &msrc, &opt, listed(faces, "metric-italic") || listed(faces, "metric-bolditalic"));
+                if (verbose)
+                    fprintf(stderr, "neuronte-fontfile: the Metric nets drew in %.2f s\n", now() - t1);
+            }
+            build_sans(&f, &mkept, &msrc, &ws, &opt);
+        } else {
             if (!kept.nglyphs) {
                 keep_sans(&kept, &src, &opt, listed(faces, "italic") || listed(faces, "bolditalic"));
                 if (verbose)

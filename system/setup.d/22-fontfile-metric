@@ -1,0 +1,29 @@
+#!/bin/sh
+# A step of neuronte-setup: the four Neuronte Sans Metric font files, the
+# desktop faces redrawn at the advances of Helvetica (copied from Adobe's
+# Core 14 AFM metric files; LICENSES/Adobe-Core14-AFM.txt). fontconfig
+# gives them, as a last choice, to a program that asks for Arial,
+# Helvetica, Liberation Sans or Arimo (66-neuronte.conf). It is run after
+# the Sans files, in the background, and does nothing when the weights
+# directory holds no Metric face (docs/neuronte-fontfile.md).
+set -u
+step=22-fontfile-metric
+word=${1-}
+set -- --weights "${NEURONTE_WEIGHTS:?}" --out "${NEURONTE_STATE:?}/fonts" \
+    --stamp "$NEURONTE_STATE/$step.stamp" --faces metric-regular,metric-bold,metric-italic,metric-bolditalic
+case $word in
+check | run)
+    found=
+    for f in "$NEURONTE_WEIGHTS"/neuronte-metric-sans-large-v*.nrt "$NEURONTE_WEIGHTS"/neuronte-metric-sans-scaled-v*.nrt; do
+        [ -e "$f" ] && found=1
+    done
+    [ -n "$found" ] || exit 0
+    ;;
+esac
+case $word in
+check) exec "${NEURONTE_FONTFILE:-neuronte-fontfile}" "$@" --check ;;
+# As for the Sans files, fc-cache is started and left to finish.
+run) exec "${NEURONTE_FONTFILE:-neuronte-fontfile}" "$@" --threads "${NEURONTE_THREADS:-4}" \
+    --fc-cache-nowait ${NEURONTE_FORCE:+--force} ;;
+*) echo "usage: $step check|run" >&2; exit 2 ;;
+esac

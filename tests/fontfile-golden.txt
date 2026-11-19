@@ -1,0 +1,13 @@
+# The SHA-256 of every font file tools/neuronte-fontfile.c makes from the shipped weights
+# (any number of threads). The five Neuronte Sans and Mono lines are the files neuronte-v2
+# 2.5.1's generator made from 2.5.1's weights: 2.6.0 changes none of their bytes. The four
+# Neuronte Sans Metric lines are 2.6.0's. Checked by make test (tests/check_fontfile.py --golden).
+8da5fae21648b166b9ccf7bb16e03ac26b673809fbe3b231ab570ce3b256b95e  NeuronteMono-Regular.ttf
+19b5fa46feee2e2a2d2ce89ff325ff7ded185c60e39ef36f70ec73c631bf242c  NeuronteSans-Bold.ttf
+7a000e7010a7aaa06447c125980774e98bd17817ca4ae7adcf6e1a6f777be4f2  NeuronteSans-BoldItalic.ttf
+24163e898fb3ec57a722c336e9b76f072655ae75d8ecc727b1fcc1d153e139b4  NeuronteSans-Italic.ttf
+c4db7215dd0678d8bac83b9164414159fc32ab8bbf201989c10fb3eed4ace6f1  NeuronteSans-Regular.ttf
+908ca32ea47ed6e4e738fb360f7b975616354a16b837faecfa215617cb3c28f9  NeuronteSansMetric-Bold.ttf
+f72bf38da0a97ef4c16b5dc2a0fdf9fe2821b4db35706ae9142ef008ef73ee14  NeuronteSansMetric-BoldItalic.ttf
+485ac735383381a4a45479379681864ab0d316d26a97ed412e995ed74c6c9b1f  NeuronteSansMetric-Italic.ttf
+88d71c471f8c9c3f97209afbabff09c7746a35f3ee6b3c3d9093d542e9f881b2  NeuronteSansMetric-Regular.ttf

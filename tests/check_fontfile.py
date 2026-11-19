@@ -1,6 +1,6 @@
 """Check the font files tools/neuronte-fontfile.c writes.
 
-usage: python3 tests/check_fontfile.py build/libneuronte.so FONTS_DIR [SECOND_DIR]
+usage: python3 tests/check_fontfile.py build/libneuronte.so FONTS_DIR [SECOND_DIR] [--golden FILE]
 
 The files are read here with a reader written for this test, from the
 OpenType specification; no font library is asked what they hold.
@@ -12,7 +12,10 @@ OpenType specification; no font library is asked what they hold.
 2. The characters are the nets': a Sans file maps exactly the characters the
    scalable desktop face was trained on and has advances for, and the Mono
    file exactly the characters the terminal bundles were trained on. The
-   advances are the nets' (Sans) and 0.6 em (Mono).
+   advances are the nets' (Sans) and 0.6 em (Mono). When the weights hold
+   Neuronte Sans Metric, its four files are checked the same way; their
+   advances are the weight's own column of the table in thousandths of an
+   em, and equal font/metric-sans-widths.txt, Adobe's numbers.
 3. Strikes. Every glyph of every strike is compared, pixel by pixel and
    advance by advance, with what the library's draw calls give for that
    character at that size: neuronte_draw_text() for the upright and bold
@@ -20,11 +23,17 @@ OpenType specification; no font library is asked what they hold.
    sheared italic of 17 px and up, neuronte_coverage() for a terminal cell.
    The limit is 0 pixels and 0 advances. Below 17 px the baseline row is
    taken from the face's drawing (font/ui-EM-latin1.txt), not from the generator's
-   rule, so a strike set a row off fails.
-4. Outlines. Each outline of Sans Regular, Sans Bold and Mono is filled at
-   the size it was traced at and compared with the net's coverage there,
-   cut at one half. A glyph may differ in at most OUTLINE_LIMIT of the
-   cell's pixels; the worst and the mean are printed.
+   rule, so a strike set a row off fails. (Neuronte Sans Metric's pixel
+   faces keep those rows.) Its bold from 9 to 16 px is the drawn bold
+   face, drawn with bold 0; a version 8 table's shift is in each strike
+   glyph as neuronte_draw_text() applies it, and put in by hand for the
+   sheared italic.
+4. Outlines. Each outline of Sans Regular, Sans Bold and Mono (and of Sans
+   Metric Regular and Bold) is filled at the size it was traced at and
+   compared with the net's coverage there, cut at one half. A glyph may
+   differ in at most OUTLINE_LIMIT of the cell's pixels; the worst and the
+   mean are printed. A Metric outline is compared with its table's shift
+   taken off, and must match better so than with the shift left on.
 5. With Pillow built on FreeType: FreeType opens each file and gives back
    the strike's pixels for ASCII at three sizes. Skipped, and said so, when
    Pillow is not installed.
@@ -33,6 +42,9 @@ OpenType specification; no font library is asked what they hold.
    every written file, each with its SHA-256 and size. With SECOND_DIR, a
    second run's files are the same bytes (the generator puts no clock and
    no thread order in its output).
+7. With --golden FILE (tests/fontfile-golden.txt), every file's SHA-256 is
+   the one recorded there: the Neuronte Sans and Mono files are the bytes
+   that 2.5.1 made.
 """
 import ctypes
 import hashlib
@@ -54,6 +66,8 @@ TRACE = 64                 # the em, and the terminal cell's width, the outlines
 OUTLINE_LIMIT = 0.008      # of a cell's pixels: 65 of the 8,192 of a 64 x 128 cell
 SANS = {"NeuronteSans-Regular.ttf": (0, 0), "NeuronteSans-Bold.ttf": (1, 0),
         "NeuronteSans-Italic.ttf": (0, 1), "NeuronteSans-BoldItalic.ttf": (1, 1)}
+METRIC = {"NeuronteSansMetric-Regular.ttf": (0, 0), "NeuronteSansMetric-Bold.ttf": (1, 0),
+          "NeuronteSansMetric-Italic.ttf": (0, 1), "NeuronteSansMetric-BoldItalic.ttf": (1, 1)}
 MONO = "NeuronteMono-Regular.ttf"
 MONO_SIZES = (9, 12, 13, 15, 16, 17, 20)
 MONO_CHARS = set(range(0x20, 0x7F)) | set(range(0xA0, 0x100))
@@ -288,6 +302,9 @@ def library(path):
     lib.neuronte_advance_scalar.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     lib.neuronte_advance_scalar.restype = ctypes.c_uint32
     lib.neuronte_advance_steps.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int]
+    lib.neuronte_advance_milli.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int]
+    lib.neuronte_advance_shift.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int, ctypes.c_int,
+                                           ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]
     lib.neuronte_coverage.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int, ctypes.c_int,
                                       ctypes.c_int, ctypes.c_void_p]
     lib.neuronte_coverage_styled.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int, ctypes.c_int,
@@ -334,13 +351,19 @@ def drawing_base(em):
     return glyphs.UI_TOP[em] + int(m.group(1)) + 1
 
 
-def sans_strikes(lib, font, bold, italic, handles):
+def sans_strikes(lib, font, bold, italic, handles, fam):
     compared = wrong = pens = missing = 0
     for em in range(1, 33):
-        if em <= 16:
+        drawn = None
+        if em <= 16 and fam["metric"]:
+            # A drawn bold face where there is one, drawn as it is (bold 0).
+            if bold:
+                drawn = newest(f"neuronte-metric-sans{em}-bold-italic-v" if italic else f"neuronte-metric-sans{em}-bold-v")
+            name = drawn or newest(f"neuronte-metric-sans{em}-italic-v" if italic else f"neuronte-metric-sans{em}-v")
+        elif em <= 16:
             name = newest(f"neuronte-ui{em}-italic-v" if italic else f"neuronte-ui{em}-v")
         else:
-            name = handles["scaled_name"]
+            name = fam["scaled_name"]
         if not name:
             if em in font.strikes:
                 fail(f"{font.name}: a {em} px strike and no net for it")
@@ -351,9 +374,13 @@ def sans_strikes(lib, font, bold, italic, handles):
         depth, cells = font.strikes[em]
         if depth != 1:
             fail(f"{font.name}: the {em} px strike is not 1 bit")
-        h = handles.setdefault(name, open_file(lib, os.path.join(WEIGHTS, name)))
+        if name not in handles:
+            handles[name] = open_file(lib, os.path.join(WEIGHTS, name))
+        h = handles[name]
         lib.neuronte_set_binary(h, 1)
-        slant = handles["slant"] if em > 16 and italic else None
+        weight = 0 if drawn else bold
+        sheared = em > 16 and italic
+        slant = fam["slant"] if sheared else None
         W, H, X = 3 * em + 8, 2 * em, em + 2
         if em <= 16:
             base = drawing_base(em)
@@ -371,13 +398,17 @@ def sans_strikes(lib, font, bold, italic, handles):
                 continue
             bx, by, adv, bits = cells[g]
             buf = np.zeros((H, W), np.uint32)
-            if slant:
-                rc = lib.neuronte_draw_scalar_styled(h, buf.ctypes.data, W, W, H, X, 0, em, 2 * em, c,
+            if sheared:
+                # The styled call draws no shift; a version 8 table's is put
+                # in by hand, as neuronte_draw_text() puts it in.
+                shift = ctypes.c_int(0)
+                lib.neuronte_advance_shift(h, c, bold, em, None, ctypes.byref(shift))
+                rc = lib.neuronte_draw_scalar_styled(h, buf.ctypes.data, W, W, H, X + shift.value, 0, em, 2 * em, c,
                                                      0xFFFFFFFF, ITALIC | (BOLD if bold else 0))
-                pen = lib.neuronte_advance(slant, c, bold, em)
+                pen = lib.neuronte_advance(slant or h, c, bold, em)
             else:
                 text = utf8(c)
-                rc = pen = lib.neuronte_draw_text(h, buf.ctypes.data, W, W, H, X, 0, em, bold, text, len(text),
+                rc = pen = lib.neuronte_draw_text(h, buf.ctypes.data, W, W, H, X, 0, em, weight, text, len(text),
                                                   0xFFFFFFFF)
             if rc < 0:
                 fail(f"{font.name}: the library did not draw U+{c:04X} at {em} px")
@@ -465,8 +496,14 @@ def edge_under(cov):
     return best
 
 
-def outlines(lib, font, source, style, w, unit, label):
+def outlines(lib, font, source, style, w, unit, label, shifts=None):
+    """shifts: each character's shift of its drawing in font units, which
+    the outline must carry and the net's coverage does not; a shifted
+    outline must match the net better with its shift taken off than with
+    it left on."""
     h = 2 * w
+    shifts = shifts or {}
+    misplaced = 0
     cov = np.zeros((h, w), np.float32)
     lib.neuronte_coverage_styled(source[ord("H")], ord("H"), w, h, 1, 0, cov.ctypes.data)
     base = edge_under(cov)
@@ -474,8 +511,11 @@ def outlines(lib, font, source, style, w, unit, label):
     for c, g in sorted(font.cmap.items()):
         lib.neuronte_coverage_styled(source[c], c, w, h, 1, style, cov.ctypes.data)
         want = cov > 0.5
-        got = fill([p for p in font.contours[g]], w, h, unit, base)
+        dx = shifts.get(c, 0)
+        got = fill([p - (dx, 0) for p in font.contours[g]], w, h, unit, base)
         off = int((got != want).sum())
+        if dx and off >= int((fill([p for p in font.contours[g]], w, h, unit, base) != want).sum()):
+            misplaced += 1
         total += off
         count += 1
         if off > worst:
@@ -485,6 +525,11 @@ def outlines(lib, font, source, style, w, unit, label):
           f"pixels differ, worst {worst} (U+{worst_c:04X}), limit {int(OUTLINE_LIMIT * w * h)}")
     if over:
         fail(f"{font.name}: {over} outlines differ from the net by more than the limit")
+    if shifts:
+        print(f"check_fontfile: {label}: {sum(1 for c in shifts if c in font.cmap)} shifted outlines carry "
+              f"their shift, {misplaced} do not")
+    if misplaced:
+        fail(f"{font.name}: {misplaced} outlines do not carry their table's shift")
 
 
 # ---- FreeType, through Pillow ----
@@ -498,7 +543,10 @@ def freetype(lib, fonts, handles, source):
         print("check_fontfile: FreeType check skipped: Pillow with FreeType is not installed")
         return
     compared = wrong = 0
-    for name, sizes in (("NeuronteSans-Regular.ttf", (11, 14, 24)), (MONO, (15,))):
+    for name, sizes in (("NeuronteSans-Regular.ttf", (11, 14, 24)), ("NeuronteSansMetric-Regular.ttf", (11, 14, 24)),
+                        (MONO, (15,))):
+        if name not in fonts:
+            continue
         font = fonts[name]
         for size in sizes:
             ft = ImageFont.truetype(os.path.join(font.dir, name), size, layout_engine=ImageFont.Layout.BASIC)
@@ -534,7 +582,7 @@ def one_cell(name):
     return not os.path.exists(os.path.join(WEIGHTS, name[:-4] + ".symbols.txt"))
 
 
-def stamp(folder, names):
+def stamp(folder, names, metric):
     """The stamps beside FOLDER's files: one in it, or the steps' in the
     directory above it (STATE/NAME.stamp for STATE/fonts)."""
     paths = [os.path.join(folder, "neuronte-fontfile.stamp")]
@@ -565,6 +613,8 @@ def stamp(folder, names):
                 or (re.fullmatch(r"neuronte-(term|kilix)-.*\.nrt", n) and one_cell(n))}
     expected |= {newest(p) for p in ("neuronte-split-v", "neuronte-ui-scaled-latin1-v",
                                      "neuronte-ui-scaled-latin1-italic-advances-v", "neuronte-ui-large-latin1-v")}
+    if metric:  # every file of Neuronte Sans Metric is used by one of its faces
+        expected |= {n for n in os.listdir(WEIGHTS) if re.fullmatch(r"neuronte-metric-sans.*-v\d+\.nrt", n)}
     if set(weights) != expected:
         fail(f"the stamps name {len(weights)} weight files, the faces are made from {len(expected)}")
     if set(outputs) != set(names):
@@ -572,12 +622,84 @@ def stamp(folder, names):
     return len(weights), len(paths)
 
 
+def widths():
+    """font/metric-sans-widths.txt: each character's advance in thousandths
+    of an em, regular and bold, as copied from Adobe's AFM files."""
+    out = {}
+    with open(os.path.join(ROOT, "font", "metric-sans-widths.txt"), encoding="utf-8") as fh:
+        for line in fh:
+            m = re.match(r"U\+([0-9A-F]{4,6}) (\d+) (\d+) ", line)
+            if m:
+                out[int(m.group(1), 16)] = (int(m.group(2)), int(m.group(3)))
+    return out
+
+
+def sans_family(lib, fonts, files, family, fam, large, handles):
+    """Characters, names and advances of one desktop family's four files;
+    then their strikes. Returns the characters and the strike counts."""
+    sans_set = face_chars(lib, large)
+    afm = widths() if fam["metric"] else None
+    if afm is not None and sorted(afm) != sans_set:
+        fail(f"{family}: the face draws {len(sans_set)} characters, font/metric-sans-widths.txt has {len(afm)}")
+    for name, (bold, italic) in files.items():
+        f = fonts[name]
+        if sorted(f.cmap) != sans_set:
+            fail(f"{name}: maps {len(f.cmap)} characters, the face draws {len(sans_set)}")
+        style = {(0, 0): "Regular", (1, 0): "Bold", (0, 1): "Italic", (1, 1): "Bold Italic"}[(bold, italic)]
+        if f.names.get(1) != family or f.names.get(2) != style or f.upm != UPM or f.fixed_pitch:
+            fail(f"{name}: family, style, em or pitch is not as stated")
+        if f.weight != (700 if bold else 400) or bool(f.mac_style & 1) != bool(bold) or bool(f.mac_style & 2) != bool(italic):
+            fail(f"{name}: weight or style bits are wrong")
+        adv = fam["slant"] if italic and fam["slant"] else large
+        for c in sans_set:
+            src = adv if lib.neuronte_advance_scalar(adv, c) == c else large
+            if fam["metric"]:
+                # The weight's own column, in thousandths, and Adobe's number.
+                want = lib.neuronte_advance_milli(src, c, bold) * UPM // 1000
+                if afm.get(c, (None, None))[bold] * UPM // 1000 != want:
+                    fail(f"{name}: U+{c:04X}: the table's advance is not font/metric-sans-widths.txt's")
+                    break
+            else:
+                want = lib.neuronte_advance_steps(src, c, 0) * UPM // 100 + (UPM // 32 if bold else 0)
+            if f.advance[f.cmap[c]] != want:
+                fail(f"{name}: U+{c:04X} advances {f.advance[f.cmap[c]]}, the net's table says {want}")
+                break
+    total = wrong = pens = 0
+    for name, (bold, italic) in files.items():
+        n, w, p, missing = sans_strikes(lib, fonts[name], bold, italic, handles, fam)
+        if missing:
+            fail(f"{name}: {missing} characters a net draws at a strike's size have no bitmap there")
+        total, wrong, pens = total + n, wrong + w, pens + p
+    return sans_set, total, wrong, pens
+
+
+def shifts_of(lib, large, chars, bold):
+    """The shifts of a version 8 table, in font units, where not 0."""
+    out = {}
+    for c in chars:
+        m = ctypes.c_int(0)
+        lib.neuronte_advance_shift(large, c, bold, TRACE, ctypes.byref(m), None)
+        if m.value:
+            out[c] = m.value * UPM // 1000
+    return out
+
+
 def main():
     if len(sys.argv) < 3:
         raise SystemExit(__doc__)
+    args = sys.argv[1:]
+    golden = None
+    if "--golden" in args:
+        k = args.index("--golden")
+        golden = args[k + 1]
+        del args[k:k + 2]
+    sys.argv[1:] = args
     lib = library(sys.argv[1])
     folder = sys.argv[2]
-    names = list(SANS) + [MONO]
+    # Neuronte Sans Metric is checked where its files were made: they are
+    # made when the weights hold its faces.
+    metric = newest("neuronte-metric-sans-large-v") is not None
+    names = list(SANS) + [MONO] + (list(METRIC) if metric else [])
     fonts = {}
     for name in names:
         try:
@@ -590,29 +712,17 @@ def main():
     print(f"check_fontfile: {len(fonts)} files parse, checksums right, "
           f"{sum(f.count for f in fonts.values())} glyphs, "
           f"{sum(len(f.strikes) for f in fonts.values())} strikes")
-
-    handles = {"scaled_name": newest("neuronte-ui-scaled-latin1-v")}
+    handles = {}
     large = open_file(lib, os.path.join(WEIGHTS, newest("neuronte-ui-large-latin1-v")))
-    handles["slant"] = open_file(lib, os.path.join(WEIGHTS, newest("neuronte-ui-scaled-latin1-italic-advances-v")))
-    sans_set = face_chars(lib, large)
-
-    # 2. characters, names and advances
-    for name, (bold, italic) in SANS.items():
-        f = fonts[name]
-        if sorted(f.cmap) != sans_set:
-            fail(f"{name}: maps {len(f.cmap)} characters, the face draws {len(sans_set)}")
-        style = {(0, 0): "Regular", (1, 0): "Bold", (0, 1): "Italic", (1, 1): "Bold Italic"}[(bold, italic)]
-        if f.names.get(1) != "Neuronte Sans" or f.names.get(2) != style or f.upm != UPM or f.fixed_pitch:
-            fail(f"{name}: family, style, em or pitch is not as stated")
-        if f.weight != (700 if bold else 400) or bool(f.mac_style & 1) != bool(bold) or bool(f.mac_style & 2) != bool(italic):
-            fail(f"{name}: weight or style bits are wrong")
-        adv = handles["slant"] if italic else large
-        for c in sans_set:
-            src = adv if lib.neuronte_advance_scalar(adv, c) == c else large
-            want = lib.neuronte_advance_steps(src, c, 0) * UPM // 100 + (UPM // 32 if bold else 0)
-            if f.advance[f.cmap[c]] != want:
-                fail(f"{name}: U+{c:04X} advances {f.advance[f.cmap[c]]}, the net's table says {want}")
-                break
+    sans_fam = {"metric": False, "scaled_name": newest("neuronte-ui-scaled-latin1-v"),
+                "slant": open_file(lib, os.path.join(WEIGHTS, newest("neuronte-ui-scaled-latin1-italic-advances-v")))}
+    # 2. characters, names and advances, and 3. strikes, of the desktop faces
+    sans_set, total, wrong, pens = sans_family(lib, fonts, SANS, "Neuronte Sans", sans_fam, large, handles)
+    if metric:
+        m_large = open_file(lib, os.path.join(WEIGHTS, newest("neuronte-metric-sans-large-v")))
+        m_fam = {"metric": True, "scaled_name": newest("neuronte-metric-sans-scaled-v"), "slant": None}
+        m_set, n, w, p = sans_family(lib, fonts, METRIC, "Neuronte Sans Metric", m_fam, m_large, handles)
+        total, wrong, pens = total + n, wrong + w, pens + p
     # Text first, then a terminal's own symbols; never a bundle drawn for
     # another box than one cell.
     bundles = [newest("neuronte-split-v")]
@@ -633,32 +743,29 @@ def main():
             or mono.ascender - mono.descender != UPM * 12 // 10 or mono.line_gap):
         fail(f"{MONO}: family, pitch, advance or line height is not as stated")
     print(f"check_fontfile: Sans maps the {len(sans_set)} characters of the desktop face, "
-          f"Mono the {len(source)} of {len(bundles)} bundles; advances are the nets'")
-
+          + (f"Sans Metric the {len(m_set)} of its face at Adobe's advances, " if metric else "")
+          + f"Mono the {len(source)} of {len(bundles)} bundles; advances are the nets'")
     # 3. strikes
-    total = wrong = pens = 0
-    for name, (bold, italic) in SANS.items():
-        n, w, p, missing = sans_strikes(lib, fonts[name], bold, italic, handles)
-        if missing:
-            fail(f"{name}: {missing} characters a net draws at a strike's size have no bitmap there")
-        total, wrong, pens = total + n, wrong + w, pens + p
     n, w = mono_strikes(lib, mono, source)
     print(f"check_fontfile: {total} Sans strike glyphs against the draw calls: {wrong} pixels and {pens} advances "
           f"differ; {n} Mono cells against neuronte_coverage(): {w} pixels differ")
     if wrong or pens or w:
         fail("strikes are not the library's pixels")
-
     # 4. outlines
     sans_source = {c: large for c in sans_set}
     outlines(lib, fonts["NeuronteSans-Regular.ttf"], sans_source, 0, TRACE, UPM / TRACE, "Sans Regular")
     outlines(lib, fonts["NeuronteSans-Bold.ttf"], sans_source, BOLD, TRACE, UPM / TRACE, "Sans Bold")
+    if metric:
+        m_source = {c: m_large for c in m_set}
+        outlines(lib, fonts["NeuronteSansMetric-Regular.ttf"], m_source, 0, TRACE, UPM / TRACE, "Sans Metric Regular",
+                 shifts_of(lib, m_large, m_set, 0))
+        outlines(lib, fonts["NeuronteSansMetric-Bold.ttf"], m_source, BOLD, TRACE, UPM / TRACE, "Sans Metric Bold",
+                 shifts_of(lib, m_large, m_set, 1))
     outlines(lib, mono, source, 0, TRACE, 0.6 * UPM / TRACE, "Mono")
-
     # 5. FreeType
     freetype(lib, fonts, handles, source)
-
     # 6. stamp, and a second run
-    count, stamps = stamp(folder, names)
+    count, stamps = stamp(folder, names, metric)
     print(f"check_fontfile: {stamps} stamps name {count} weight files and {len(names)} written files, "
           "hashes and sizes right")
     if len(sys.argv) > 3:
@@ -666,6 +773,22 @@ def main():
         print(f"check_fontfile: a second run wrote the same bytes for {len(same)} of {len(names)} files")
         if len(same) != len(names):
             fail("two runs gave different files")
+    # 7. golden
+    if golden:
+        want = {}
+        with open(golden, encoding="utf-8") as fh:
+            for line in fh:
+                if line.strip() and not line.startswith("#"):
+                    h, n = line.split()
+                    want[n] = h
+        dirs = [folder] + sys.argv[3:4]
+        if set(want) != set(names):
+            fail(f"{os.path.basename(golden)} names {sorted(want)}, the files are {sorted(names)}")
+        for d in dirs:
+            for n in names:
+                if want.get(n) != sha(os.path.join(d, n)):
+                    fail(f"{n}: its SHA-256 is not the one in {os.path.basename(golden)}")
+        print(f"check_fontfile: {len(names)} files of {len(dirs)} runs have the SHA-256 of {os.path.basename(golden)}")
     if fails:
         raise SystemExit(f"check_fontfile: {len(fails)} failures")
     print("check_fontfile: passed")

@@ -12,7 +12,10 @@ makes the files when Neuronte is installed and again at start whenever
 they are absent or the weights changed. Nothing in the files comes from
 another font: every outline and every pixel is a net's answer, every
 advance is from a net's table, and the tables are written from the
-OpenType specification.
+OpenType specification. The tables of Neuronte Sans Metric hold numbers
+copied from Adobe's AFM metric files for Helvetica (its advances; see
+[PROVENANCE.md](../PROVENANCE.md)), so its files' advances are those
+numbers; no font file is opened to make them either.
 
 ![Chromium 156 with no font but these: page text, tab, URL bar](neuronte-fontfile-chromium.png)
 
@@ -30,6 +33,10 @@ face is Chromium's list of suggestions under the URL bar: see
 | `NeuronteSans-Italic.ttf` | Neuronte Sans, Italic | 192 | the same, the library's shear | 3 to 32 px, 1 bit, every character |
 | `NeuronteSans-BoldItalic.ttf` | Neuronte Sans, Bold Italic | 192 | both | 3 to 32 px, 1 bit, every character |
 | `NeuronteMono-Regular.ttf` | Neuronte Mono, Regular | 4,958 | the terminal bundles | 9, 12, 13, 15, 16, 17, 20 px, 8 bit, ASCII and Latin-1 |
+| `NeuronteSansMetric-Regular.ttf` | Neuronte Sans Metric, Regular | 192 | `neuronte-metric-sans-large-v1` | 1 to 32 px, 1 bit, every character |
+| `NeuronteSansMetric-Bold.ttf` | Neuronte Sans Metric, Bold | 192 | the same, the library's bold | 1 to 32 px, 1 bit: the drawn bold faces at 9 to 16 px, the library's bold elsewhere |
+| `NeuronteSansMetric-Italic.ttf` | Neuronte Sans Metric, Italic | 192 | the same, the library's shear | 3 to 32 px, 1 bit, every character |
+| `NeuronteSansMetric-BoldItalic.ttf` | Neuronte Sans Metric, Bold Italic | 192 | both | 3 to 32 px, 1 bit: the drawn bold italics at 9 to 16 px |
 
 2,557,184 bytes together with the weights of 2.5.0 (208,828, 214,936,
 217,864, 225,228 and 1,690,328; with the weights of 2.4.0, when Sans had
@@ -38,7 +45,11 @@ face is Chromium's list of suggestions under the URL bar: see
 4,919 terminal characters of `neuronte-split-v9` and the ten
 `neuronte-term-*` bundles and the 39 symbols of
 `neuronte-kilix-chrome-v1`; with the weights of 2.3.0 it was 3,205
-characters in 1,125,900 bytes.
+characters in 1,125,900 bytes. These five files are the same bytes with
+the weights of 2.6.0. The four Neuronte Sans Metric files of 2.6.0 are
+224,648, 231,092, 236,968 and 243,252 bytes. Neuronte Mono takes no
+bundle drawn for two cells (a `NAME.symbols.txt` beside it), so the wide
+bundles of 2.6.0 are not in it.
 
 **Characters.** A file maps exactly the characters its nets were trained
 on (`neuronte_untrained()` is 0) and nothing else. Neuronte Sans has the
@@ -147,6 +158,17 @@ none is copied.
 | Italic angle | 0, or -14.04 degrees: the library's shear of one in four | 0 |
 | Underline | 71 units thick, at 71 below the baseline | the same |
 
+Neuronte Sans Metric is measured the same way (ascender 797, descender
+-171), with two differences. Its advances are the table's in
+thousandths of an em, `neuronte_advance_milli()`, of the weight's own
+column: Helvetica's widths for Regular and Italic, Helvetica-Bold's for
+Bold and Bold Italic, and no 32nd of an em added. And where its version 8
+table shifts a character's drawing (12 characters of the scaled and large
+faces, `" / \ ^ j © ® ¯ Î Ï î ï`), the outline is moved by the shift, so
+it is in the left side bearing, and so is each strike glyph, by the
+shift in whole pixels at that em; the pen does not move by it. A
+negative shift puts ink left of the pen.
+
 Inside a strike the advance is the whole number of pixels the library
 moves its pen at that em. It is the small face's own width, not the
 outline's advance rounded: at 14 px `m` advances 12 pixels where the
@@ -179,7 +201,14 @@ strike's advance.
 - **Above 32 px italic and bold are the library's** shear and wider
   stroke applied to the upright large face, as in the library itself.
 - **Wide characters** that take two terminal cells, emoji and icons are
-  not in any file.
+  not in any file. The wide bundles of 2.6.0 are left out of Mono because
+  their drawings are for a box of two cells (a `NAME.symbols.txt` beside
+  each says so); taking them would make Mono a dual-width font and
+  change its bytes.
+- **Neuronte Sans Metric has no shift in the packed text masks.**
+  `neuronte_bits_compose()` has no field for it; the font files carry the
+  shift, so through fontconfig the 12 shifted characters are where the
+  library draws them.
 - A character in no net shows the mark; the files invent nothing.
 
 ## A character Neuronte Sans does not have
@@ -226,10 +255,16 @@ Arabic, Devanagari and emoji are in no net and show the mark.
   own configuration or the distribution prefers, is tried first. So with
   any other font installed for a request, that font is still used, and no
   user's choice is overridden;
-- for the two families, has embedded bitmaps used and the automatic
+- adds Neuronte Sans Metric as the default of Arial, Helvetica,
+  Liberation Sans and Arimo, with `binding="same"`, as fontconfig's own
+  `30-metric-aliases.conf` adds Liberation Sans for Arial: at the end of
+  the list, after every family fontconfig would give in their place. Those
+  rules come before the generic ones, so for these four names the Metric
+  face comes before Neuronte Sans;
+- for the three families, has embedded bitmaps used and the automatic
   hinter off.
 
-No rule names another font's family. A program that asks for "Arial" or
+No other rule names another font's family. A program that asks for
 "Noto Sans" gets Neuronte Sans only because nothing better is installed
 and fontconfig then falls to the generic list. With only these files:
 
@@ -239,7 +274,8 @@ and fontconfig then falls to the generic list. With only these files:
 | `monospace`, `DejaVu Sans Mono`, `Courier New` | Neuronte Mono Regular |
 | `monospace:bold` | Neuronte Mono Regular, with fontconfig's `embolden` set |
 | `Noto Sans:bold` | Neuronte Sans Bold |
-| `Arial:italic` | Neuronte Sans Italic |
+| `Arial:italic`, `Helvetica:italic` | Neuronte Sans Metric Italic |
+| `Liberation Sans:bold`, `Arimo:bold` | Neuronte Sans Metric Bold |
 | `Times New Roman:bold:italic` | Neuronte Sans Bold Italic |
 
 On a machine with 196 other fonts installed, adding the files and this
@@ -247,7 +283,11 @@ fontconfig file changed none of eight answers tried (`sans-serif`,
 `serif`, `monospace`, `system-ui`, no family, `Arial`, `Noto Sans:bold`,
 `Courier New`): each stayed the font it was. The two families are then
 used when asked for by name, and for a character that no other installed
-font has.
+font has. With 2.6.0's files and fontconfig file, on a machine with 196
+other fonts (Liberation, Nimbus and DejaVu among them), twelve answers were
+the same with and without them: those eight, `Helvetica`, `Liberation
+Sans`, `Arimo` and `Arial:bold:italic` (Liberation Sans, Nimbus Sans,
+Liberation Sans, Liberation Sans Bold Italic).
 
 ## Making them: `neuronte-fontfile`
 
@@ -257,7 +297,13 @@ make                      # builds build/neuronte-fontfile with the library
 ```
 
 C11, linked with libneuronte and libm only. `--faces` takes any of
-`regular,bold,italic,bolditalic,mono`; `--mono-sizes` and `--mono-chars`
+`regular,bold,italic,bolditalic,mono` and
+`metric-regular,metric-bold,metric-italic,metric-bolditalic`. Without it
+every face is made whose files are in the weights directory: a directory
+with no `neuronte-metric-sans-*` file gives the five files and the stamp
+options of 2.5.1. Each family's version string carries a digest of its
+own weight files only, so adding the Metric files changes no byte of
+Neuronte Sans. `--mono-sizes` and `--mono-chars`
 choose Mono's strikes; `--no-strikes` and `--no-outlines` write the
 variants the table above compares.
 
@@ -334,18 +380,19 @@ written for the system cannot be run as a user by accident; a step
 meant for both is put in both. No user step is shipped here: the font
 files are the same for every user and are made once by the system.
 
-Three steps are here, and others can be added beside them without
+Four steps are here, and others can be added beside them without
 changing the command:
 
 | Step | Makes | When |
 |---|---|---|
 | `20-fontfile-sans` | the four Neuronte Sans files | after the login screen has started, in the background, first |
-| `25-fontfile-mono` | Neuronte Mono | after the Sans files, in the background |
+| `22-fontfile-metric` | the four Neuronte Sans Metric files; nothing when the weights have no Metric face | after the Sans files, in the background |
+| `25-fontfile-mono` | Neuronte Mono | after the Metric files, in the background |
 | `30-cells` | cells files for programs that call the library (`docs/neuronte-cells.md`) | afterwards, in the background |
 
-The fonts are two steps so that the Sans files, which take less than
+The fonts are three steps so that the Sans files, which take less than
 half the time of Mono and are what most programs ask for, are there
-first, and so that a machine whose login screen has no other font can
+first (Neuronte Sans Metric, asked for by name only, comes next), and so that a machine whose login screen has no other font can
 make the Sans step alone an early one. A step with settings of its own reads them from the same settings
 file, which the command names in `NEURONTE_SETUP_CONF`; the command
 passes over keys it does not know.
@@ -362,7 +409,7 @@ sudo systemctl --global enable neuronte-setup-user.service   # when there are us
 ```
 
 `install-setup` puts `neuronte-fontfile`, `neuronte-cells` and
-`neuronte-setup` in `/usr/bin`, the three steps in
+`neuronte-setup` in `/usr/bin`, the four steps in
 `/usr/lib/neuronte/setup.d`, the settings in `/etc/neuronte/setup.conf`
 (kept when one is there), the fontconfig file in `/etc/fonts/conf.d`,
 the two system units and the user unit, and this page and
@@ -430,7 +477,7 @@ directory itself, which gives the same answer.
 --early` looks at no font step, so the login screen waits for none of
 this. With the Sans step named early it took 5 to 11 ms (the medians of
 20 were 10.9, 5.5 and 11.2 ms in three runs, hours apart). The whole of
-`neuronte-setup`, three steps, after the login screen, takes 15 to 18 ms; a step's own check is 2 to 3 ms of that and the
+`neuronte-setup`, three steps (2.5.1; 2.6.0 adds the Metric step), after the login screen, takes 15 to 18 ms; a step's own check is 2 to 3 ms of that and the
 rest is starting shells. `neuronte-setup --user` with no user step is 4
 to 8 ms. No net is opened and no file is read beyond its size and time.
 With `--verify`, which reads and hashes the 45 weight files the fonts
@@ -519,8 +566,9 @@ Neuronte Mono at the cell sizes of the terminal's font sizes from 7 to
 - `tests/test_cells.c`, twice, the second time under AddressSanitizer:
   every entry of a cells file against the library, and damaged files
   (`docs/neuronte-cells.md`).
-- `tests/check_setup.sh`: 111 checks of `neuronte-setup` and the three
-  steps in a directory of its own: nothing made, `--early`, the rest, a
+- `tests/check_setup.sh`: 137 checks of `neuronte-setup` and the four
+  steps in a directory of its own: nothing made, `--early`, the Sans step,
+  the Metric step (and that it does nothing with no Metric face), the rest, a
   run when current changes no file, time or directory entry; a touched
   file is current, a changed or removed one is made again as it was; a
   stamp of another version or option, or one more bundle in the weights
@@ -528,15 +576,25 @@ Neuronte Mono at the cell sizes of the terminal's font sizes from 7 to
   steps still run; at a start a step may defer and a step that overruns
   is stopped; `--user` keeps its state apart and touches nothing of the
   system's; the cells step follows its settings, removes what nobody
-  asks for, and writes the same bytes with one thread or several.
+  asks for, and writes the same bytes with one thread or several; and,
+  where `fc-match` is installed, that fontconfig with these files and
+  `66-neuronte.conf` alone gives Neuronte Sans Metric for Arial,
+  Helvetica, Liberation Sans and Arimo (regular, bold, bold italic) and
+  Neuronte Sans for `sans-serif`, and that a family an earlier rule names
+  for Arial comes before the Metric face.
 - `tests/check_fontfile.py`: reads the files with a reader of its own
   written from the specification (directory, checksums, `cmap`, `glyf`,
   `hmtx`, `EBLC`, `EBDT`), then: the characters are exactly the nets'; the
   advances are the nets'; every strike glyph is the library's pixels and
-  advance (limit 0); every outline of Sans Regular, Sans Bold and Mono
-  filled at 64 px is within 65 pixels of the net's 8,192; FreeType,
-  where Pillow is installed, gives the strikes back; the stamps name
-  every weight file and written file with the right hashes; a second run
-  with another number of threads wrote the same bytes.
+  advance (limit 0), with the drawn bold faces of Neuronte Sans Metric
+  and its shifts; the Metric advances are also `font/metric-sans-widths.txt`'s,
+  Adobe's numbers; every outline of Sans Regular, Sans Bold, Sans Metric
+  Regular and Bold and Mono filled at 64 px is within 65 pixels of the
+  net's 8,192, a shifted Metric outline with its shift taken off;
+  FreeType, where Pillow is installed, gives the strikes back; the stamps
+  name every weight file and written file with the right hashes; a second
+  run with another number of threads wrote the same bytes; and every file
+  has the SHA-256 in `tests/fontfile-golden.txt`, where the Neuronte Sans
+  and Mono lines are the files 2.5.1 made.
 
 [faces-v2]: https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-v2.md

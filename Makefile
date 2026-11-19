@@ -50,7 +50,8 @@ build/libneuronte-media.so: src/media.c include/neuronte_media.h | build
 # packed file's pixels against tests/golden.json.
 # Then the font files: neuronte-setup makes them through its steps
 # (tests/check_setup.sh), the generator makes them a second time with another
-# number of threads, and tests/check_fontfile.py reads both.
+# number of threads, and tests/check_fontfile.py reads both and compares
+# their bytes with tests/fontfile-golden.txt.
 TEST_THREADS ?= 2
 test: all build/test_utf8 build/test_api build/test_cells build/test_cells_checked
 	./build/test_utf8
@@ -62,7 +63,7 @@ test: all build/test_utf8 build/test_api build/test_cells build/test_cells_check
 	sh tests/check_setup.sh build $(TEST_THREADS)
 	./build/neuronte-fontfile --weights weights --out build/setup-test/again --threads 3 --no-fc-cache
 	OPENBLAS_NUM_THREADS=1 $(PYTHON) tests/check_fontfile.py build/libneuronte.so build/setup-test/state/fonts \
-		build/setup-test/again
+		build/setup-test/again --golden tests/fontfile-golden.txt
 
 # The font-file generator, the setup command with its steps, the start-up
 # units and the fontconfig file, where a system keeps them. The settings
@@ -77,7 +78,8 @@ install-setup: build/neuronte-fontfile build/neuronte-cells
 		$(DESTDIR)$(SYSCONFDIR)/neuronte $(DESTDIR)$(SYSCONFDIR)/fonts/conf.d \
 		$(DESTDIR)$(UNITDIR) $(DESTDIR)$(PREFIX)/share/doc/neuronte
 	install -m 755 build/neuronte-fontfile build/neuronte-cells system/neuronte-setup $(DESTDIR)$(PREFIX)/bin/
-	install -m 755 system/setup.d/20-fontfile-sans system/setup.d/25-fontfile-mono system/setup.d/30-cells \
+	install -m 755 system/setup.d/20-fontfile-sans system/setup.d/22-fontfile-metric system/setup.d/25-fontfile-mono \
+		system/setup.d/30-cells \
 		$(DESTDIR)$(PREFIX)/lib/neuronte/setup.d/
 	test -e $(DESTDIR)$(SYSCONFDIR)/neuronte/setup.conf || \
 		install -m 644 system/setup.conf $(DESTDIR)$(SYSCONFDIR)/neuronte/setup.conf
