@@ -258,6 +258,10 @@ int neuronte_draw_utf8(neuronte *n, uint32_t *pixels, int stride, int width, int
 /* Advances, for a proportional face. An advance is how far the pen moves
  * after a character, side bearings included. The file stores it in steps
  * of a hundredth of an em, for a regular and a bold weight (bold 0 or 1).
+ * A fine table stores thousandths of an em instead: a version 4 table
+ * whose header says 100 units per em, or a version 8 table, which also
+ * stores for each character and weight a shift of its drawing (see
+ * neuronte_advance_shift()). Every call below works on both kinds.
  * A scalar with no record of its own is measured as the table's fallback
  * scalar, and the caller draws that scalar in its place, so a measured
  * line ends where the drawn one does. Nothing is kerned.
@@ -271,13 +275,28 @@ int neuronte_advances(const neuronte *n);
  * fallback. */
 uint32_t neuronte_advance_scalar(const neuronte *n, uint32_t scalar);
 
-/* The advance in steps, 10 to 200. */
+/* The advance in steps, 10 to 200. For a fine table, the thousandths
+ * rounded to the nearest step, a tie going up. */
 int neuronte_advance_steps(const neuronte *n, uint32_t scalar, int bold);
+
+/* The advance in thousandths of an em, 100 to 2000: a fine table's own
+ * value, or ten times the steps of a table in hundredths. */
+int neuronte_advance_milli(const neuronte *n, uint32_t scalar, int bold);
 
 /* The advance in whole pixels for an em of em_px pixels, 1 to
  * NEURONTE_MAX_CELL: (steps * em_px + 50) / 100, the nearest pixel, with
- * a tie going to the wider count. */
+ * a tie going to the wider count. For a fine table it is
+ * (thousandths * em_px + 500) / 1000, rounded the same way. */
 int neuronte_advance(const neuronte *n, uint32_t scalar, int bold, int em_px);
+
+/* The shift of a character's drawing for that weight: how far right of
+ * the pen its cell is drawn, never how far the pen moves. *milli gets it
+ * in thousandths of an em (-500 to 500) and *px in whole pixels at em_px,
+ * the nearest, a tie going away from zero; either may be NULL. It is 0
+ * but in a version 8 table. The proportional draw calls below apply it:
+ * neuronte_draw_text() the weight's own, neuronte_draw_text_stroke() the
+ * regular one. Returns NEURONTE_OK or NEURONTE_ERR_ARG. */
+int neuronte_advance_shift(const neuronte *n, uint32_t scalar, int bold, int em_px, int *milli, int *px);
 
 /* The width of UTF-8 text in pixels: each character's pixel advance,
  * rounded by itself, summed. Ill-formed bytes measure as U+FFFD does. */
@@ -297,6 +316,23 @@ int neuronte_text_width(const neuronte *n, const char *text, size_t len, int bol
 int neuronte_draw_text(neuronte *n, uint32_t *pixels, int stride, int width, int height,
                        int x, int y, int em_px, int bold, const char *text, size_t len,
                        uint32_t color);
+
+/* Text set at its exact width. The same as neuronte_draw_text(), but the
+ * pen is kept in thousandths of an em, as the advance table gives them
+ * (neuronte_advance_milli()), and each character's cell, still a
+ * whole-pixel picture, is put at the nearest pixel of its true position:
+ * the k-th character's pen is x + round(S * em_px / 1000), a half going
+ * up, where S is the sum of the thousandths before it; its shift is then
+ * applied as in neuronte_draw_text(). A line therefore ends within half a
+ * pixel of its exact length, at any em, and the gaps between letters vary
+ * by a pixel where neuronte_draw_text() would let the line drift.
+ * neuronte_text_width_exact() is that length, round(sum * em_px / 1000).
+ * For a table in hundredths of an em the thousandths are ten times the
+ * hundredths. bold is 0 or 1. Returns the width, or an error. */
+int neuronte_text_width_exact(const neuronte *n, const char *text, size_t len, int bold, int em_px);
+int neuronte_draw_text_exact(neuronte *n, uint32_t *pixels, int stride, int width, int height,
+                             int x, int y, int em_px, int bold, const char *text, size_t len,
+                             uint32_t color);
 
 /* Proportional text with explicit synthetic weight. stroke_px is 0..em_px.
  * The advance of EACH character (including spaces and replacements) is its

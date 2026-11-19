@@ -101,6 +101,32 @@ authorization of the copyright holder.
 Unicode is a registered trademark of Unicode, Inc. This project is not
 affiliated with or endorsed by Unicode, Inc.
 
+### Adobe Core 14 AFM metrics for Helvetica (derived data)
+
+`font/metric-sans-widths.txt` (a file of Neuronte 0.1.7, copied byte for byte)
+copies numbers from Adobe's AFM metric files `Helvetica.afm` and
+`Helvetica-Bold.afm` (Version 002.000): for each of the 192 characters of the
+desktop faces, its glyph name, its width in both weights and its bounding box in
+the regular weight, and the cap height, x-height, ascender, descender and stem
+width. Neuronte's `tools/make-metric-sans-widths.py` writes the file from AFM
+files that the builder supplies (Debian installs them with
+`python-matplotlib-data`); the oblique files are read only to check that their
+widths equal the upright ones. Neuronte Sans Metric uses these numbers as its
+advances and as the ink boxes its letters are redrawn to, so the advance tables
+of the `weights/neuronte-metric-sans*.nrt` files and the advances of the
+`NeuronteSansMetric-*.ttf` files that `tools/neuronte-fontfile.c` writes are
+these numbers. The AFM files are not redistributed. Their copyright lines and
+Adobe's notice are in [LICENSES/Adobe-Core14-AFM.txt](LICENSES/Adobe-Core14-AFM.txt).
+Helvetica is a trademark of Linotype-Hell AG and/or its subsidiaries, and Arial
+of The Monotype Corporation; no face here is named Helvetica or Arial. The four
+family names in `system/66-neuronte.conf` (Arial, Helvetica, Liberation Sans,
+Arimo) are names a program may ask fontconfig for; they are matched, not used as
+the name of any file or face.
+
+While Neuronte Sans Metric was drawn, the font TeX Gyre Heros (GUST Font
+License) was looked at as a visual reference, outside this repository. No file
+of it, and nothing read from it, is in this repository or in any weight file.
+
 ## Used but not redistributed
 
 Nothing below is copied into this repository or into a weight file. Each

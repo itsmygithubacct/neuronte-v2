@@ -26,7 +26,11 @@
  * weights. The warp is the one in train/snap.py.
  *
  * An advance table (version 4) is the pen step of each character of a
- * proportional face, regular and bold, in steps of a hundredth of an em.
+ * proportional face, regular and bold, in steps of a hundredth of an em,
+ * or of a thousandth when its header says 100 units per em. Version 8 is
+ * the same table in thousandths with a shift of each letter's drawing,
+ * regular and bold, beside each record; a shift moves the ink, never the
+ * pen.
  * A drawing file (version 5) is a directory of whole images: nets, at
  * most one advance table, and colour nets. Its nets are distance, colour
  * and tiled members, the first of which draws every scalar, or else one
@@ -69,6 +73,10 @@
 #define ADV_MAX 4096           /* records in an advance table */
 #define ADV_LO 10              /* the least and the greatest advance, in steps */
 #define ADV_HI 200
+#define ADV_RECORD8 12         /* a version 8 record: scalar, two advances, two shifts */
+#define MILLI_LO 100           /* the same bounds in thousandths of an em */
+#define MILLI_HI 2000
+#define SHIFT_MAX 500          /* a version 8 shift, either way, in thousandths */
 #define DRAWING_HEAD 16
 #define MIN_IMAGE 12           /* a magic and a version */
 #define SETS 256 /* the draw cache: SETS x WAYS cells, least recently used out */
@@ -190,12 +198,15 @@ struct range {
 
 struct advance {
     uint32_t scalar;
-    uint16_t steps[2]; /* regular, bold */
+    uint16_t steps[2]; /* regular, bold, in hundredths (thousandths rounded for a fine table) */
+    uint16_t milli[2]; /* regular, bold, in thousandths of an em */
+    int16_t shift[2];  /* regular, bold: where the drawing moves, in thousandths; 0 but in version 8 */
 };
 
 struct neuronte {
     struct advance *adv; /* sorted by scalar; NULL for no advance table */
     size_t nadv, adv_fallback; /* the record a scalar with none of its own takes */
+    int adv_fine;              /* 1 for a table in thousandths of an em (version 4 at 100 units, or 8) */
     int nets;
     struct net *net[MAX_NETS];
     struct range *ranges; /* sorted, not overlapping */
@@ -877,31 +888,42 @@ static int adopt(neuronte *n)
     return NEURONTE_OK;
 }
 
-/* The length of an advance table from its first 28 bytes, or 0. */
+/* The length of an advance table (version 4 or 8) from its first 28
+ * bytes, or 0. */
 static size_t adv_len(const unsigned char *p)
 {
     uint32_t count = rd32(p + 24);
-    return count >= 1 && count <= ADV_MAX ? ADV_HEAD + ADV_RECORD * (size_t)count : 0;
+    size_t rec = rd32(p + 8) == 8 ? ADV_RECORD8 : ADV_RECORD;
+    return count >= 1 && count <= ADV_MAX ? ADV_HEAD + rec * (size_t)count : 0;
 }
 
-/* The advance table from a version 4 image. Nothing in it is repaired. */
+/* The advance table from a version 4 or 8 image. Version 4 is in
+ * hundredths of an em (10 units of 10 steps) or thousandths (100 units of
+ * 10 steps); version 8 is in thousandths and carries the shifts. Nothing
+ * in it is repaired. */
 static int adv_open(const unsigned char *p, size_t len, neuronte *n)
 {
-    uint32_t fallback;
-    size_t count, i;
-    int found = 0;
+    uint32_t fallback, ver;
+    size_t count, i, rec;
+    int found = 0, fine;
 
-    if (n->adv || len < ADV_HEAD || memcmp(p, "NEURONTE", 8) != 0 || rd32(p + 8) != 4 ||
-        rd32(p + 12) != 10 || rd32(p + 16) != 10 || rd32(p + 20) != 2 || adv_len(p) != len)
+    if (n->adv || len < ADV_HEAD || memcmp(p, "NEURONTE", 8) != 0)
         return NEURONTE_ERR_FORMAT;
+    ver = rd32(p + 8);
+    fine = rd32(p + 12) == 100;
+    if ((ver != 4 && ver != 8) || (rd32(p + 12) != 10 && !fine) || (ver == 8 && !fine) ||
+        rd32(p + 16) != 10 || rd32(p + 20) != 2 || adv_len(p) != len)
+        return NEURONTE_ERR_FORMAT;
+    rec = ver == 8 ? ADV_RECORD8 : ADV_RECORD;
     count = rd32(p + 24);
     fallback = rd32(p + 28);
     n->adv = malloc(count * sizeof *n->adv);
     if (!n->adv)
         return NEURONTE_ERR_NOMEM;
     n->nadv = count;
+    n->adv_fine = fine;
     for (i = 0; i < count; i++) {
-        const unsigned char *r = p + ADV_HEAD + ADV_RECORD * i;
+        const unsigned char *r = p + ADV_HEAD + rec * i;
         struct advance *a = &n->adv[i];
         int w;
         a->scalar = rd32(r);
@@ -909,9 +931,21 @@ static int adv_open(const unsigned char *p, size_t len, neuronte *n)
             (i > 0 && a->scalar <= n->adv[i - 1].scalar))
             return NEURONTE_ERR_FORMAT;
         for (w = 0; w < 2; w++) {
-            a->steps[w] = (uint16_t)(r[4 + 2 * w] | r[5 + 2 * w] << 8);
-            if (a->steps[w] < ADV_LO || a->steps[w] > ADV_HI)
-                return NEURONTE_ERR_FORMAT;
+            unsigned v = (unsigned)(r[4 + 2 * w] | r[5 + 2 * w] << 8);
+            if (fine) {
+                int sh = ver == 8 ? (int16_t)(uint16_t)(r[8 + 2 * w] | r[9 + 2 * w] << 8) : 0;
+                if (v < MILLI_LO || v > MILLI_HI || sh < -SHIFT_MAX || sh > SHIFT_MAX)
+                    return NEURONTE_ERR_FORMAT;
+                a->milli[w] = (uint16_t)v;
+                a->steps[w] = (uint16_t)((v + 5) / 10);
+                a->shift[w] = (int16_t)sh;
+            } else {
+                if (v < ADV_LO || v > ADV_HI)
+                    return NEURONTE_ERR_FORMAT;
+                a->steps[w] = (uint16_t)v;
+                a->milli[w] = (uint16_t)(v * 10);
+                a->shift[w] = 0;
+            }
         }
         if (a->scalar == fallback) {
             n->adv_fallback = i;
@@ -1034,7 +1068,7 @@ static int drawing_open(const unsigned char *p, size_t len, neuronte *n)
         if (memcmp(m, "NEURONTE", 8) != 0)
             return NEURONTE_ERR_FORMAT;
         ver = rd32(m + 8);
-        if (bundled && ver != 4 && ver != 7)
+        if (bundled && ver != 4 && ver != 7 && ver != 8)
             return NEURONTE_ERR_FORMAT; /* nets beside a bundle's */
         switch (ver) {
         case 1:
@@ -1052,6 +1086,7 @@ static int drawing_open(const unsigned char *p, size_t len, neuronte *n)
             n->nets += rc == NEURONTE_OK;
             break;
         case 4:
+        case 8:
             rc = adv_open(m, ml, n); /* a second table is refused there */
             break;
         case 6:
@@ -1086,7 +1121,7 @@ int neuronte_open(const void *data, size_t len, neuronte **out)
     if (len < MIN_IMAGE || memcmp(p, "NEURONTE", 8) != 0)
         return NEURONTE_ERR_FORMAT;
     ver = rd32(p + 8);
-    if (ver < 1 || ver > 6)
+    if (ver < 1 || (ver > 6 && ver != 8))
         return NEURONTE_ERR_FORMAT;
     n = calloc(1, sizeof *n);
     if (!n)
@@ -1099,7 +1134,7 @@ int neuronte_open(const void *data, size_t len, neuronte **out)
     } else if (ver == 3) {
         rc = colour_open(p, len, &n->net[0]);
         n->nets = rc == NEURONTE_OK;
-    } else if (ver == 4) {
+    } else if (ver == 4 || ver == 8) {
         rc = adv_open(p, len, n);
     } else if (ver == 5) {
         rc = drawing_open(p, len, n);
@@ -1254,7 +1289,7 @@ int neuronte_open_file(const char *path, neuronte **out)
         want = file_len(rd32(head + 20));
     else if (got == sizeof head && rd32(head + 8) == 2)
         prefix = bundle_prefix(head);
-    else if (got == sizeof head && rd32(head + 8) == 4)
+    else if (got == sizeof head && (rd32(head + 8) == 4 || rd32(head + 8) == 8))
         want = adv_len(head);
     else if (got == sizeof head && rd32(head + 8) == 5) {
         prefix = drawing_prefix(head);
@@ -2732,12 +2767,46 @@ int neuronte_advance_steps(const neuronte *n, uint32_t scalar, int bold)
     return advance_of(n, scalar)->steps[bold];
 }
 
+/* A record's advance in whole pixels: the nearest, a tie going up. A
+ * table in hundredths keeps its own arithmetic. */
+static int64_t adv_px(const neuronte *n, const struct advance *a, int w, int64_t em_px)
+{
+    return n->adv_fine ? ((int64_t)a->milli[w] * em_px + 500) / 1000 : ((int64_t)a->steps[w] * em_px + 50) / 100;
+}
+
+/* A shift in whole pixels: the nearest, a tie going away from zero. */
+static int shift_px(int shift, int em_px)
+{
+    int64_t v = (int64_t)shift * em_px;
+    return (int)(v >= 0 ? (v + 500) / 1000 : -((-v + 500) / 1000));
+}
+
 int neuronte_advance(const neuronte *n, uint32_t scalar, int bold, int em_px)
 {
     int steps = neuronte_advance_steps(n, scalar, bold);
     if (steps < 0 || em_px <= 0 || em_px > NEURONTE_MAX_CELL)
         return NEURONTE_ERR_ARG;
-    return (steps * em_px + 50) / 100; /* to the nearest pixel, a tie going up */
+    return (int)adv_px(n, advance_of(n, scalar), bold, em_px);
+}
+
+int neuronte_advance_milli(const neuronte *n, uint32_t scalar, int bold)
+{
+    if (!n || !n->adv || bold < 0 || bold > 1)
+        return NEURONTE_ERR_ARG;
+    return advance_of(n, scalar)->milli[bold];
+}
+
+int neuronte_advance_shift(const neuronte *n, uint32_t scalar, int bold, int em_px, int *milli, int *px)
+{
+    const struct advance *a;
+    if (!n || !n->adv || bold < 0 || bold > 1 || em_px <= 0 || em_px > NEURONTE_MAX_CELL)
+        return NEURONTE_ERR_ARG;
+    a = advance_of(n, scalar);
+    if (milli)
+        *milli = a->shift[bold];
+    if (px)
+        *px = shift_px(a->shift[bold], em_px);
+    return NEURONTE_OK;
 }
 
 int neuronte_text_width(const neuronte *n, const char *text, size_t len, int bold, int em_px)
@@ -2778,14 +2847,45 @@ int neuronte_text_width_stroke(const neuronte *n, const char *text, size_t len,
     return total;
 }
 
-/* stroke_px == -1 is the unchanged packed-bold advance policy. */
+/* The pixel at which the pen is after acc thousandths of an em at em_px,
+ * counted from x: x + round(acc * em_px / 1000), a half going up; or
+ * INT64_MAX once that is past what int64 holds. acc is never negative. */
+static int64_t exact_pen(int x, int64_t acc, int em_px)
+{
+    if (acc > (INT64_MAX - 500 - INT_MAX) / em_px)
+        return INT64_MAX;
+    return (int64_t)x + (acc * em_px + 500) / 1000;
+}
+
+int neuronte_text_width_exact(const neuronte *n, const char *text, size_t len, int bold, int em_px)
+{
+    int64_t acc = 0, w;
+    size_t off = 0;
+
+    if ((!text && len) || (bold != 0 && bold != 1) || neuronte_advance(n, 0x20, bold, em_px) < 0)
+        return NEURONTE_ERR_ARG;
+    while (off < len) {
+        uint32_t s;
+        off += neuronte_utf8_decode(text + off, len - off, &s);
+        acc += advance_of(n, s)->milli[bold];
+        if (acc > (INT64_MAX - 500) / em_px)
+            return NEURONTE_ERR_ARG;
+    }
+    w = (acc * em_px + 500) / 1000;
+    return w > INT_MAX ? NEURONTE_ERR_ARG : (int)w;
+}
+
+/* stroke_px == -1 is the unchanged packed-bold advance policy. exact == 1
+ * (neuronte_draw_text_exact, stroke_px == -1 only) keeps the pen in
+ * thousandths of an em and puts each character at the nearest pixel of
+ * its true position; exact == 0 is the unchanged whole-pixel pen. */
 static int draw_text(neuronte *n, uint32_t *pixels, int stride, int width, int height,
                      int x, int y, int em_px, int bold, int stroke_px, const char *text, size_t len,
-                     uint32_t color)
+                     uint32_t color, int exact)
 {
     float alpha = (float)(color >> 24) / 255.0f;
     int cw, ch, total, ss, px, py, stroke;
-    int64_t pen;
+    int64_t pen, acc = 0;
     size_t off = 0;
 
     /* Check em before doubling it. Past INT_MAX / 2 the height overflows. */
@@ -2794,7 +2894,8 @@ static int draw_text(neuronte *n, uint32_t *pixels, int stride, int width, int h
         return NEURONTE_ERR_ARG;
     cw = em_px;
     ch = em_px * 2;
-    total = stroke_px < 0 ? neuronte_text_width(n, text, len, bold, em_px) :
+    total = exact ? neuronte_text_width_exact(n, text, len, bold, em_px) :
+            stroke_px < 0 ? neuronte_text_width(n, text, len, bold, em_px) :
                            neuronte_text_width_stroke(n, text, len, stroke_px, em_px);
     if (total < 0 || alpha <= 0.0f)
         return total;
@@ -2807,17 +2908,22 @@ static int draw_text(neuronte *n, uint32_t *pixels, int stride, int width, int h
         const float *cov;
         uint32_t s;
         int rc = NEURONTE_OK;
-        int ix;
-        int64_t adv;
+        int ix, dx;
+        int64_t adv, at;
 
         off += neuronte_utf8_decode(text + off, len - off, &s);
         a = advance_of(n, s);
+        /* A version 8 table moves the drawing, not the pen: the bold
+         * shift for the packed bold, the regular one otherwise. */
+        dx = a->shift[stroke_px < 0 ? bold : 0] ? shift_px(a->shift[stroke_px < 0 ? bold : 0], em_px) : 0;
         /* Room for every offset of the rightward stroke.
          * The pen is wider than int: a clipped character may start at
-         * INT_MAX, and its advance still has to be added. */
-        ix = pen > INT_MAX ? INT_MAX : (int)pen;
-        if (pen <= INT_MAX && (int64_t)ix < width && (int64_t)y < height &&
-            pen + (int64_t)cw + stroke > 0 && (int64_t)y + ch > 0) {
+         * INT_MAX, and its advance still has to be added. The pen
+         * saturates at INT64_MAX, so the shifted position does too. */
+        at = dx > 0 && pen > INT64_MAX - dx ? INT64_MAX : pen + dx;
+        ix = at > INT_MAX ? INT_MAX : at < INT_MIN ? INT_MIN : (int)at;
+        if (at <= INT_MAX && at >= INT_MIN && (int64_t)ix < width && (int64_t)y < height &&
+            at + (int64_t)cw + stroke > 0 && (int64_t)y + ch > 0) {
             cell = cached(n, a->scalar, cw, ch, ss, 1, &rc);
             if (!cell)
                 return rc;
@@ -2837,8 +2943,12 @@ static int draw_text(neuronte *n, uint32_t *pixels, int stride, int width, int h
                     }
                 }
         }
-        adv = stroke_px < 0 ? ((int64_t)a->steps[bold] * em_px + 50) / 100 :
-                             ((int64_t)a->steps[0] * em_px + 50) / 100 + stroke_px;
+        if (exact) {
+            acc += a->milli[bold];
+            pen = exact_pen(x, acc, em_px);
+            continue;
+        }
+        adv = stroke_px < 0 ? adv_px(n, a, bold, em_px) : adv_px(n, a, 0, em_px) + stroke_px;
         if (adv > 0 && pen > INT64_MAX - adv)
             pen = INT64_MAX;
         else
@@ -2851,7 +2961,16 @@ int neuronte_draw_text(neuronte *n, uint32_t *pixels, int stride, int width, int
                        int x, int y, int em_px, int bold, const char *text, size_t len,
                        uint32_t color)
 {
-    return draw_text(n, pixels, stride, width, height, x, y, em_px, bold, -1, text, len, color);
+    return draw_text(n, pixels, stride, width, height, x, y, em_px, bold, -1, text, len, color, 0);
+}
+
+int neuronte_draw_text_exact(neuronte *n, uint32_t *pixels, int stride, int width, int height,
+                             int x, int y, int em_px, int bold, const char *text, size_t len,
+                             uint32_t color)
+{
+    if (bold != 0 && bold != 1)
+        return NEURONTE_ERR_ARG;
+    return draw_text(n, pixels, stride, width, height, x, y, em_px, bold, -1, text, len, color, 1);
 }
 
 int neuronte_draw_text_stroke(neuronte *n, uint32_t *pixels, int stride, int width, int height,
@@ -2860,5 +2979,5 @@ int neuronte_draw_text_stroke(neuronte *n, uint32_t *pixels, int stride, int wid
 {
     if (stroke_px < 0)
         return NEURONTE_ERR_ARG;
-    return draw_text(n, pixels, stride, width, height, x, y, em_px, 0, stroke_px, text, len, color);
+    return draw_text(n, pixels, stride, width, height, x, y, em_px, 0, stroke_px, text, len, color, 0);
 }

@@ -19,7 +19,8 @@ usage: python3 tests/check_set.py build/libneuronte.so [--write-golden]
    asked.
 5. Every packed file's coverage over a fixed list of characters and cells, and
    its advances where it has a table, hash to the values in tests/golden.json.
-   For the two faces that draw many sizes, lines of text and sheared letters
+   For the faces that draw many sizes (Neuronte Sans's and Neuronte Sans
+   Metric's scaled and large faces), lines of text and sheared letters
    drawn at several sizes are part of the hash.
    --write-golden records them instead (done once, when the set is cut).
 6. Every bundle with a list (weights/NAME.list.txt beside weights/NAME.nrt)
@@ -214,7 +215,7 @@ def pixels(lib, name):
                 for s in range(0x20, 0x7F):
                     adv.update(f"{lib.neuronte_advance(h, s, bold, em)},".encode())
         entry["advance_sha256"] = adv.hexdigest()
-    scaled = re.match(r"neuronte-ui-(scaled|large)(?:-latin1)?-v\d+\.nrt", name)
+    scaled = re.match(r"neuronte-(?:ui|metric-sans)-(scaled|large)(?:-latin1)?-v\d+\.nrt", name)
     if scaled:
         # A face drawn at many sizes: lines of text as a program draws them,
         # black and white to 32 px and blended above, and sheared letters.
