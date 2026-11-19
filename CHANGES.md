@@ -1,5 +1,68 @@
 # Changes
 
+## 2.6.0
+
+Every file of 2.5.1 is still here byte for byte and draws the same pixels
+and advances; `tests/golden.json` keeps all 52 of its entries unchanged.
+The Neuronte Sans and Neuronte Mono files `neuronte-fontfile` makes are
+the same bytes as 2.5.1 made (`tests/fontfile-golden.txt`). The set is 124
+files, 144,108,937 bytes, from 66 files, 72,026,486 bytes.
+
+- **The library is Neuronte 0.1.7's.** `src/neuronte.c` and
+  `include/neuronte.h` are 0.1.7's, byte for byte: advance tables in
+  thousandths of an em (version 4 at 100 units per em, or version 8 with
+  a shift of each character's drawing that never moves the pen),
+  `neuronte_advance_milli()`, `neuronte_advance_shift()`,
+  `neuronte_text_width_exact()` and `neuronte_draw_text_exact()`. Every
+  existing call is as it was, and the soname is still `libneuronte.so.0`.
+- **Neuronte Sans Metric**, 48 new faces: the desktop face redrawn to
+  Helvetica's widths, so a line is as long as in Helvetica or Arial.
+  `neuronte-metric-sansN-v1` (1 to 16 px), `-italic-v1` (3 to 16 px), a
+  drawn bold `-bold-v1` and `-bold-italic-v1` (9 to 16 px; draw them with
+  `bold` = 0), `neuronte-metric-sans-scaled-v1` (17 to 32 px) and
+  `-large-v1` (33 px up), each 192 characters. Its advances are numbers
+  copied from Adobe's Core 14 AFM files for Helvetica: `PROVENANCE.md`
+  and `THIRD_PARTY_NOTICES.md` say so and are scoped to it,
+  `LICENSES/Adobe-Core14-AFM.txt` carries Adobe's notice, and
+  `font/metric-sans-widths.txt` holds the numbers. The scaled and large
+  faces FAILED their declared gate (G-M1) and ship by the owner's ruling.
+- **Neuronte Sans Metric font files.** `neuronte-fontfile` writes
+  `NeuronteSansMetric-Regular.ttf`, `-Bold`, `-Italic` and `-BoldItalic`,
+  family "Neuronte Sans Metric", when the weights hold its faces. Each
+  advance is `neuronte_advance_milli()` × UPM / 1000 from the weight's own
+  column (Helvetica-Bold's widths in Bold), and a version 8 shift is in
+  the left side bearing of the outline and in each strike glyph; the
+  strikes of Bold from 9 to 16 px are the drawn bold faces. A new setup
+  step, `22-fontfile-metric`, makes them after the Sans files and does
+  nothing when the weights have no Metric face. `66-neuronte.conf` adds
+  the family weakly, at the end, for a program that asks for Arial,
+  Helvetica, Liberation Sans or Arimo, so any of those fonts that is
+  installed is still chosen first. Without `--faces`, a weights directory
+  with no Metric face gives the same options and files as 2.5.1. Neuronte
+  Sans keeps its advances (the regular column and the library's
+  1/32 em bold).
+- **Wide characters**, five bundles: `neuronte-wide-forms-v1`,
+  `-symbols-v1`, `-pictographs-v1`, `-pictographs2-v1` and
+  `-supplement-v1`, 1,261 characters drawn for the box of two cells a
+  terminal gives a wide character, each with its `NAME.symbols.txt`. 95 of
+  their 322 nets FAILED their limits and ship by the owner's word, marked
+  on their cards; 74 drawn characters are left out. None is a default, and
+  Neuronte Mono does not take them.
+- **Two-colour ranking for the video player.** `TwoInk.rank()` in
+  `tools/neuronte_video.py` gives each cell the candidates with the least
+  unconstrained two-colour error with one matrix product, so the full
+  mode fits a short list instead of every candidate.
+  `tests/check_rank.py`, part of `make test`, checks it against each
+  candidate's own normal equations.
+- `make test` also checks the Metric font files: their characters, names
+  and advances (against `font/metric-sans-widths.txt` as well as the
+  library), every strike glyph against the library's draw calls, the
+  outlines with their shifts, FreeType's reading of them, and fontconfig's
+  choice of family for Arial, Helvetica, Liberation Sans, Arimo and
+  `sans-serif` with `66-neuronte.conf` alone (when `fc-match` is there).
+  `tests/check_set.py` hashes the Metric scaled and large faces' lines of
+  text as it does Neuronte Sans's.
+
 ## 2.5.1
 
 - **The Sans files are made in the background at a start.** `early=`

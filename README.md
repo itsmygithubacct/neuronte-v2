@@ -6,15 +6,21 @@ file, no glyph table and no bitmap atlas behind it. The weights are the
 font.
 
 This repository is **Neuronte 2**, the slim set: the C library and one
-packed net for each job, and nothing else. Its weights are 72 MB. The full project,
+packed net for each job, and nothing else. Its weights are 144 MB. The full project,
 with the training code, every generation of every net and the measurements
 behind them, is [Neuronte 0.1.x](https://github.com/itsmygithubacct/neuronte).
 Every net is a file of Neuronte, copied byte for byte under the same name:
 the 33 desktop faces of 2.5.0 are files of Neuronte at commit
 [bfd0a2d](https://github.com/itsmygithubacct/neuronte/tree/bfd0a2d066161eaa5abeae9747e151ff345702ef),
-which no Neuronte tag holds yet, and every other net is a file of
+which no Neuronte tag holds yet; the Neuronte Sans Metric faces and the
+wide bundles of 2.6.0 are files of Neuronte 0.1.7, as pushed on its
+branches at [0aa0a4c](https://github.com/itsmygithubacct/neuronte/tree/0aa0a4c52ce11cb36273153c28c2fa6b8ade1e9c)
+(Metric) and [985c177](https://github.com/itsmygithubacct/neuronte/tree/985c177443d330b7789fefe0001c10dd949640c6)
+(wide); and every other net is a file of
 [Neuronte 0.1.6](https://github.com/itsmygithubacct/neuronte/tree/v0.1.6).
-The library is 0.1.6's source.
+The library is 0.1.7's source (`src/neuronte.c` and `include/neuronte.h`,
+the same bytes at 0aa0a4c); every file of 2.5.1 draws with it exactly as it
+did.
 [CHANGES.md](CHANGES.md) lists what each version added.
 
 ![The same ten lines, 8 to 48 px, drawn by Neuronte 2.1 and by DejaVu Sans](docs/neuronte-2.1-and-dejavu.png)
@@ -58,6 +64,8 @@ hundred lines, and shows the whole of the text interface.
 | Desktop text, 3 to 16 px, italic | `neuronte-ui3-italic-v2.nrt` to `neuronte-ui16-italic-v2.nrt` | [faces](#desktop-faces) |
 | Desktop text, 17 to 32 px, upright and italic | `neuronte-ui-scaled-latin1-v1.nrt`, with `neuronte-ui-scaled-latin1-italic-advances-v1.nrt` | [scaled face](docs/neuronte-ui-scaled-v0.md) |
 | Desktop text above 32 px | `neuronte-ui-large-latin1-v2.nrt` | [large face](docs/neuronte-ui-large-v1.md) |
+| Desktop text at the widths of Helvetica and Arial, Neuronte Sans Metric: 1 to 16 px, italics from 3 px, a drawn bold from 9 px, and 17 px up | `neuronte-metric-sans1-v1.nrt` to `neuronte-metric-sans16-v1.nrt` and their `-italic`, `-bold` and `-bold-italic` files, `neuronte-metric-sans-scaled-v1.nrt`, `neuronte-metric-sans-large-v1.nrt` | [Neuronte Sans Metric](#neuronte-sans-metric) |
+| 1,261 wide characters, drawn for the box of two cells a terminal gives them: fullwidth forms, wide symbols, pictographs | `neuronte-wide-forms-v1.nrt`, `neuronte-wide-symbols-v1.nrt`, `neuronte-wide-pictographs-v1.nrt`, `neuronte-wide-pictographs2-v1.nrt`, `neuronte-wide-supplement-v1.nrt` | [wide characters](#wide-characters) |
 | 300 colour emoji | `neuronte-emoji-v1.nrt` | [emoji-v1][emoji] |
 | 167 colour icons | `neuronte-icon-v2.nrt` | [icon-v2][icon] |
 | The Kilix flame | `neuronte-flame-v1.nrt` | [flame-v1][flame] |
@@ -155,8 +163,9 @@ themes, coverage without drawing, and loading weights from memory.
 
 A browser or a GTK or Qt program takes its text from fontconfig and
 FreeType and cannot run a net. `build/neuronte-fontfile` writes what the
-nets draw as five TrueType files, Neuronte Sans in four styles and
-Neuronte Mono, with the nets' own pixels embedded for the small sizes:
+nets draw as nine TrueType files, Neuronte Sans and Neuronte Sans Metric
+in four styles each and Neuronte Mono, with the nets' own pixels embedded
+for the small sizes:
 
 ```sh
 ./build/neuronte-fontfile --weights weights --out ~/.local/share/fonts/neuronte
@@ -165,7 +174,9 @@ Neuronte Mono, with the nets' own pixels embedded for the small sizes:
 On a system, `neuronte-setup` makes them at install and at start when they
 are absent or the weights changed, and a fontconfig file makes them the
 last choice for `sans-serif` and `monospace`, after any font that is
-installed. [The page on them](docs/neuronte-fontfile.md) says what the
+installed, and Neuronte Sans Metric the last choice for a program that
+asks for Arial, Helvetica, Liberation Sans or Arimo. The Neuronte Sans and
+Mono files are the same bytes as 2.5.1 made. [The page on them](docs/neuronte-fontfile.md) says what the
 files hold, what they lack (kerning, shaping, hinting, a serif face) and
 how each program tried draws them.
 
@@ -261,6 +272,47 @@ each letter is. `font/ui-tops.json` gives the first, and each
 `font/ui-EM-latin1.txt` (italic `font/ui-EM-latin1-italic.txt`) holds that
 size's advances and pixels.
 
+## Neuronte Sans Metric
+
+Neuronte Sans Metric is the desktop face redrawn so that a line set in it
+is as long as in Helvetica, and so as in Arial, Liberation Sans and Arimo,
+which share Helvetica's widths: a page laid out for those fonts keeps its
+line breaks. **Its advances are copied** from Adobe's Core 14 AFM metric
+files for Helvetica and Helvetica-Bold, the one place in the project
+where widths are copied ([PROVENANCE.md](PROVENANCE.md),
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)); the letters are this
+project's own strokes and pixel drawings, redrawn to those widths. It is a
+new face beside Neuronte Sans, which does not change.
+
+- `neuronte-metric-sansN-v1` (1 to 16 px) and `neuronte-metric-sansN-italic-v1`
+  (3 to 16 px): every letter exactly its drawing at its advance. The
+  italic is a pure slant at the upright advances. At 1 and 2 px the
+  characters Helvetica gives 0 px keep 1 px (51 at 1 px, 4 at 2 px).
+- `neuronte-metric-sansN-bold-v1` and `-bold-italic-v1` (9 to 16 px): a
+  bold drawn at Helvetica-Bold's widths. Draw these files with `bold` = 0;
+  they are the bold. The struck bold (`bold` = 1) of a pixel face touches
+  its neighbours, because Helvetica-Bold is only a little wider than
+  Helvetica.
+- `neuronte-metric-sans-scaled-v1` (17 to 32 px, snapped) and
+  `neuronte-metric-sans-large-v1` (33 px up). Their tables also shift the
+  drawing of 12 characters (`" / \ ^ j © ® ¯ Î Ï î ï`) without moving the
+  pen; the library applies the shift. **They FAILED the gate declared for
+  them** (G-M1, 8 of 12 groups, both seeds) because Helvetica's box edges
+  land on ties in the gate's reference, and ship by the owner's ruling of
+  2026-11-18 on net against its own strokes at the same bar.
+
+Each advance is held in thousandths of an em, and `neuronte_advance()`
+rounds it, `(m * em + 500) / 1000` pixels. A line drawn a whole pixel at a
+time drifts from Helvetica's length (by up to 5% at 6 to 10 px);
+`neuronte_draw_text_exact()` keeps the pen in thousandths and ends a line
+within half a pixel of it. The card gives the gates, the touching letters,
+the speed and the notes for callers:
+[Neuronte Sans Metric][metric]. The drawings, the widths tool and the
+checks of the faces against their drawings are in Neuronte; here
+`font/metric-sans-widths.txt` holds Adobe's numbers, and `make test`
+checks the files' pixels and advances against `tests/golden.json`, and
+the font files' advances against those numbers.
+
 ## More terminal characters
 
 Ten more bundles draw 3,578 characters the terminal bundle was not trained
@@ -332,6 +384,31 @@ a time, with `neuronte_coverage_layers_half()` or `neuronte_draw_half()`.
 In half cells under 14 pixels wide the library snaps edges, and the
 picture then differs from the drawing by 4 to 6 of 255 on average.
 
+## Wide characters
+
+Five bundles draw 1,261 wide characters, the ones a terminal gives two
+cells (East Asian Width W or F), for that box, the way
+`neuronte-kilix-chrome-v2` does: ask for a box `w` by `h` as the cell `w`
+by `2 * h` and take the mean of each pair of rows. They were drawn from
+each character's Unicode name; no font was opened. Each set is a
+`weights/NAME.symbols.txt`, not a `.list.txt`, because some of these code
+points are also one-cell characters of a terminal bundle. A program opens
+them before the terminal bundles for a character it gives two cells.
+
+| File | Characters | Nets |
+|---|---|---|
+| `neuronte-wide-forms-v1.nrt` | The 103 fullwidth forms (U+FF01..FF60, U+FFE0..FFE6) | 12 group nets, each passing its limits with both seeds; [card][wide-forms] |
+| `neuronte-wide-symbols-v1.nrt` | 282 wide signs below U+1F300: game tiles, enclosed and squared signs, emoticons, transport and map symbols, large coloured shapes | 73 nets; **29 FAILED** their limits and ship by the owner's word; 42 drawn characters left out; [card][wide-symbols] |
+| `neuronte-wide-pictographs-v1.nrt` | 273 of Miscellaneous Symbols and Pictographs, U+1F300..1F448 | 78 nets; **27 FAILED**; 6 left out; [card][wide-pictographs] |
+| `neuronte-wide-pictographs2-v1.nrt` | 266 of U+1F449..1F5FF (a second file: one bundle holds at most 127 group nets) | 68 nets; **16 FAILED**; 14 left out; [card][wide-pictographs2] |
+| `neuronte-wide-supplement-v1.nrt` | 337 of Supplemental Symbols and Pictographs and Symbols and Pictographs Extended-A | 91 nets; **23 FAILED**; 12 left out; [card][wide-supplement] |
+
+A failing group was halved once. Of the halves that failed again, the
+owner shipped the 95 whose better seed missed by at most 25%; they are
+marked FAILED on the cards. Characters Unicode tells apart only by colour
+are drawn alike, by the owner's choice. None of the five is a default, and
+Neuronte Mono does not take them (a font file's glyph is one cell).
+
 ## The nets, one by one
 
 - **Terminal bundle.** `neuronte-split-v9` is [split-v8][split-v8] with 165
@@ -360,6 +437,10 @@ picture then differs from the drawing by 4 to 6 of 255 on average.
   narrower nets of the same drawings.
 - **Video.** [The player](tools/neuronte-video.md) plays a video in a
   terminal. Its default mode needs only `neuronte-video-masks-v0.nrt`.
+  From 2.6.0 `TwoInk.rank()` in `tools/neuronte_video.py` ranks every
+  two-colour candidate of every cell exactly with one matrix product, so
+  the full mode can fit a short list of candidates per cell;
+  `tests/check_rank.py` checks it.
 
 ## What is not here
 
@@ -376,6 +457,10 @@ picture then differs from the drawing by 4 to 6 of 255 on average.
 - The learned video helpers. They are tied to `neuronte-split-v5`, so the
   player here has no `--helper` option, and its cells mode draws with
   `neuronte-split-v9`.
+- The drawings of Neuronte Sans Metric (`font/metric-sans-*.txt`), the
+  tools that made them and its widths file, its cards, its checks against
+  its drawings and the Helvetica PDF fixture, and the wide bundles'
+  provenance and validation records. They are in Neuronte 0.1.7.
 - Training code, weights as JSON, second seeds, scores and research
   records. They are in [Neuronte 0.1.x][repo], where every net can be
   retrained and rechecked. `train/glyphs.py` and `train/strokes.py` are here
@@ -411,3 +496,9 @@ built with `make media`, links FFmpeg; see
 [faces-192-256]: https://github.com/itsmygithubacct/neuronte/blob/v0.1.2/weights/neuronte-ui-v1-192-256.md
 [faces-v2]: https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-v2.md
 [signs]: https://github.com/itsmygithubacct/neuronte/blob/bfd0a2d066161eaa5abeae9747e151ff345702ef/weights/neuronte-ui-latin1-signs-v0.md
+[metric]: https://github.com/itsmygithubacct/neuronte/blob/0aa0a4c52ce11cb36273153c28c2fa6b8ade1e9c/weights/neuronte-metric-sans-v1.md
+[wide-forms]: https://github.com/itsmygithubacct/neuronte/blob/985c177443d330b7789fefe0001c10dd949640c6/weights/neuronte-wide-forms-v1.md
+[wide-symbols]: https://github.com/itsmygithubacct/neuronte/blob/985c177443d330b7789fefe0001c10dd949640c6/weights/neuronte-wide-symbols-v1.md
+[wide-pictographs]: https://github.com/itsmygithubacct/neuronte/blob/985c177443d330b7789fefe0001c10dd949640c6/weights/neuronte-wide-pictographs-v1.md
+[wide-pictographs2]: https://github.com/itsmygithubacct/neuronte/blob/985c177443d330b7789fefe0001c10dd949640c6/weights/neuronte-wide-pictographs2-v1.md
+[wide-supplement]: https://github.com/itsmygithubacct/neuronte/blob/985c177443d330b7789fefe0001c10dd949640c6/weights/neuronte-wide-supplement-v1.md
