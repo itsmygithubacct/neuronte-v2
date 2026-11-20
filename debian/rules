@@ -1,0 +1,35 @@
+#!/usr/bin/make -f
+# The shared library installs under the multiarch lib directory.
+# Packed weight files stay outside the package. The developer Makefile
+# is unchanged: a checkout still builds in ./build.
+
+export DEB_BUILD_OPTIONS := noautodbgsym
+
+D := debian/neuronte
+M := $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+L := $(D)/usr/lib/$(M)
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(MAKE) all LDFLAGS=-Wl,-soname,libneuronte.so.1
+
+override_dh_auto_test:
+	$(MAKE) build/test_utf8 build/test_api
+	./build/test_utf8
+	./build/test_api weights/neuronte-split-v8.nrt --full --accent --pixel
+
+override_dh_auto_install:
+	install -d $(L) $(D)/usr/include $(D)/usr/bin
+	install -m 0644 build/libneuronte.so $(L)/libneuronte.so.1
+	ln -s libneuronte.so.1 $(L)/libneuronte.so
+	install -m 0644 include/neuronte.h $(D)/usr/include/neuronte.h
+	$(CC) -Iinclude -o $(D)/usr/bin/neuronte-probe packaging/probe.c \
+		-L$(L) -lneuronte -Wl,-rpath-link,$(L)
+	chmod -R a+rX $(D)
+	chmod a+x $(D)/usr/bin/neuronte-probe
+	test ! -e $(D)/usr/share/neuronte
+	find $(D) -name '*.nrt' | grep -q . && exit 1 || true
+	test -f $(L)/libneuronte.so.1
+	LD_LIBRARY_PATH=$(L) $(D)/usr/bin/neuronte-probe

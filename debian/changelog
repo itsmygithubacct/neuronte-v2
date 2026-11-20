@@ -1,0 +1,6 @@
+neuronte (2.1.0+packaging1) UNRELEASED; urgency=medium
+
+  * Install the shared library and a load probe under /usr.
+    Packed weight files stay outside the package.
+
+ -- itsmygithubacct <itsmygithubacct@users.noreply.github.com>  Fri, 20 Nov 2026 07:57:53 +0000
